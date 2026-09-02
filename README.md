@@ -91,6 +91,19 @@ Consulte [o documento de arquitetura](docs/architecture.md) para conhecer os
 limites dos componentes, as invariantes e a estrutura proposta para o
 repositório.
 
+## Planejamento do desenvolvimento
+
+O desenvolvimento ainda não começou. A documentação inicial define como o
+projeto deverá evoluir antes da criação do primeiro crate:
+
+1. Consulte o [índice da documentação](docs/README.md).
+2. Leia o [plano de desenvolvimento](docs/plano-de-desenvolvimento.md).
+3. Execute somente o backlog da [Fase 1: fundação](docs/fase-01-fundacao.md).
+
+A Fase 1 estabelece o workspace, a configuração, os logs, o ciclo de vida do
+servidor, a verificação de saúde e a CI. Filas, mensagens e persistência começam
+apenas nas fases seguintes, depois que essa base estiver validada.
+
 ## Roadmap
 
 - **v0.1 — Fundação:** workspace, configuração, modelo de erros e CI.
