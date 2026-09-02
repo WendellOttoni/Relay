@@ -1,254 +1,183 @@
-# Fase 1 — Fundação do projeto
+# Fase 1 — Fundação da API
 
-Status: **Pronta para iniciar**  
-Marco relacionado: **v0.1**
+Status: **Aguardando decisões da Fase 0**
 
 ## 1. Objetivo
 
-Criar uma base compilável, testável e observável para receber o domínio do
-broker na fase seguinte. Esta fase não implementa filas, publicação, consumo,
-protocolo de mensagens nem persistência.
+Criar e publicar uma API mínima, sem chamar IA e sem acessar o GitHub. Essa base
+deve provar configuração, HTTPS, CORS, observabilidade, health checks, CI e o
+ciclo de deploy que será usado pelo chat.
 
-## 2. Resultado demonstrável
+## 2. Pré-requisitos
 
-Ao final da fase deve ser possível:
+Antes da primeira implementação:
 
-```console
-$ relay-server --config relay.toml
-INFO relay_server: servidor iniciado
-INFO relay_server: configuração carregada
-INFO relay_server: aguardando encerramento
-```
+- aceitar uma ADR de linguagem e framework;
+- escolher um serviço para a prova de deploy;
+- definir a origem de desenvolvimento e a origem do GitHub Pages;
+- escolher o formato inicial de streaming;
+- definir a política mínima de versões e dependências.
 
-O processo deve:
+Consulte [decisões pendentes](decisoes-pendentes.md).
 
-- iniciar com configuração padrão ou arquivo informado;
-- rejeitar configuração inválida com mensagem clara;
-- produzir logs estruturados;
-- responder a uma verificação simples de saúde;
-- receber um sinal de encerramento;
-- finalizar recursos dentro de um prazo configurado.
+## 3. Dentro do escopo
 
-O exemplo representa comportamento planejado; comandos e mensagens finais serão
-definidos durante a implementação.
+- projeto executável do backend;
+- configuração por ambiente;
+- endpoint `GET /health/live`;
+- endpoint `GET /health/ready`;
+- middleware de request ID;
+- formato comum de erros;
+- CORS com lista explícita;
+- limites básicos de requisição;
+- logs estruturados e seguros;
+- testes unitários e de integração;
+- CI e primeiro deploy de desenvolvimento;
+- documentação para execução local.
 
-## 3. O que está dentro do escopo
+## 4. Fora do escopo
 
-- workspace Rust;
-- crate executável `relay-server`;
-- módulo de configuração;
-- modelo comum de erros na fronteira da aplicação;
-- inicialização de logging/tracing;
-- ciclo de vida e desligamento seguro;
-- verificação de saúde mínima;
-- testes unitários e de processo;
-- CI e automações de qualidade;
-- documentação para desenvolvimento local.
+- chamada a qualquer modelo de IA;
+- endpoint real de chat;
+- autenticação GitHub;
+- leitura ou escrita em repositórios;
+- banco de dados e histórico;
+- contas de usuário;
+- painel administrativo;
+- múltiplos serviços ou microsserviços.
 
-## 4. O que está fora do escopo
+## 5. Backlog executável
 
-- filas e tópicos;
-- comandos `PUBLISH`, `CONSUME`, `ACK` ou `NACK`;
-- protocolo público definitivo;
-- autenticação e TLS;
-- armazenamento de mensagens;
-- retry, TTL e dead-letter queues;
-- SDKs e benchmarks de throughput;
-- otimizações de desempenho.
-
-Se uma tarefa exigir algum desses itens, ela deve ser adiada para a fase
-correspondente, e não incorporada silenciosamente à Fase 1.
-
-## 5. Sequência de implementação
-
-### F1.1 — Inicializar o workspace
+### F1.1 — Aceitar decisões técnicas
 
 Entregáveis:
 
-- `Cargo.toml` na raiz;
-- crate binária `crates/relay-server`;
-- toolchain e edição Rust documentadas;
-- comandos locais de build, lint e teste.
+- ADR da stack;
+- ADR do streaming;
+- registro do ambiente de deploy para a prova.
 
-Critérios de aceite:
+Aceite: outra pessoa consegue explicar por que as escolhas atendem streaming,
+segredos, testes, custo e experiência do mantenedor.
 
-- `cargo build --workspace` conclui sem warnings;
-- `cargo test --workspace` conclui com sucesso;
-- o binário imprime sua versão;
-- um clone limpo consegue reproduzir os comandos documentados.
-
-### F1.2 — Definir configuração
-
-Configurações iniciais propostas:
-
-| Chave | Finalidade | Comportamento inicial |
-| --- | --- | --- |
-| `server.bind` | Endereço local de escuta | Valor seguro para desenvolvimento |
-| `server.shutdown_timeout` | Prazo de encerramento | Limitado e maior que zero |
-| `limits.max_connections` | Proteção contra conexões ilimitadas | Obrigatoriamente limitado |
-| `limits.max_frame_size` | Proteção antes da alocação | Obrigatoriamente limitado |
-| `observability.log_level` | Nível de logs | Validado na inicialização |
-| `data.directory` | Futuro diretório de dados | Caminho explícito e validado |
-
-Precedência proposta:
-
-```text
-argumentos CLI > variáveis de ambiente > arquivo > valores padrão
-```
-
-Critérios de aceite:
-
-- configuração padrão é válida;
-- arquivo inexistente ou inválido produz erro com contexto;
-- valores fora de limite são recusados antes de iniciar o servidor;
-- precedência possui testes;
-- segredos não aparecem em logs ou mensagens de erro.
-
-### F1.3 — Padronizar erros e diagnóstico
+### F1.2 — Inicializar o projeto
 
 Entregáveis:
 
-- erros tipados dentro dos módulos;
-- contexto legível na fronteira do executável;
-- código de saída diferente de zero em falha de inicialização;
-- convenção de campos para logs estruturados.
+- solução/projeto mínimo;
+- configuração de versão da ferramenta;
+- build, lint e testes locais documentados.
 
-Critérios de aceite:
+Aceite: um clone limpo compila sem warnings e executa os testes.
 
-- nenhuma falha esperada depende de `panic`;
-- mensagens indicam operação e causa;
-- detalhes internos não são enviados a futuros clientes;
-- payloads e segredos não são registrados.
+### F1.3 — Configurar ambientes
 
-### F1.4 — Implementar ciclo de vida
+Configurações conceituais iniciais:
 
-Estados propostos:
+| Chave | Finalidade |
+| --- | --- |
+| ambiente | desenvolvimento, preview ou produção |
+| URL/origem permitida | CORS explícito |
+| nível de log | diagnóstico sem conteúdo |
+| timeout da requisição | trabalho externo limitado |
+| tamanho máximo | proteção de entrada |
+| request concurrency | proteção de recursos |
 
-```text
-starting -> ready -> draining -> stopped
-    |                     |
-    +--------> failed <---+
-```
+Aceite: valores ausentes ou inválidos impedem prontidão e exibem erro seguro.
 
-Critérios de aceite:
-
-- o servidor sinaliza quando está pronto;
-- um encerramento solicitado deixa de aceitar novo trabalho;
-- recursos recebem prazo para finalizar;
-- uma segunda solicitação pode forçar o encerramento;
-- testes não dependem do processo ficar aguardando indefinidamente.
-
-### F1.5 — Adicionar verificação de saúde
-
-A Fase 1 precisa apenas de uma prova simples de que o processo está vivo e
-pronto. Ela não deve definir prematuramente a API administrativa final.
-
-Critérios de aceite:
-
-- diferencia estado vivo de estado pronto;
-- possui timeout e tamanho de resposta limitados;
-- deixa de indicar prontidão durante o encerramento;
-- pode ser validada por teste de integração.
-
-Uma ADR deve decidir se essa verificação será HTTP, comando administrativo TCP
-ou outro mecanismo antes de a tarefa ser implementada.
-
-### F1.6 — Configurar qualidade contínua
-
-A CI deve executar, no mínimo:
-
-```console
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-cargo doc --workspace --no-deps
-```
-
-Também deve existir uma verificação de dependências e vulnerabilidades. A
-ferramenta e sua política serão escolhidas durante esta tarefa e documentadas.
-
-Critérios de aceite:
-
-- a CI executa em pull requests e no `main`;
-- falha de formatação, lint ou teste bloqueia a integração;
-- builds e testes não dependem de serviços externos;
-- cache melhora tempo, mas não é necessário para correção.
-
-### F1.7 — Documentar execução local
+### F1.4 — Padronizar respostas e erros
 
 Entregáveis:
 
-- pré-requisitos;
-- build e execução;
-- configuração de exemplo sem segredos;
-- execução de testes e lints;
-- solução de erros locais frequentes.
+- request ID aceito ou gerado pelo servidor;
+- formato JSON comum de erro;
+- mapeamento mínimo para `400`, `401`, `403`, `404`, `429` e `5xx`;
+- tratamento global sem stack trace público.
 
-Critérios de aceite:
+Aceite: testes de contrato validam status, content type, código e request ID.
 
-- instruções funcionam a partir de um clone limpo;
-- comandos são compatíveis com a CI;
-- nenhum arquivo local ou segredo precisa ser versionado.
+### F1.5 — Implementar health checks
 
-## 6. Backlog inicial sugerido
+Entregáveis:
 
-| Ordem | Issue sugerida | Resultado |
-| --- | --- | --- |
-| 1 | `chore: initialize Rust workspace` | Workspace e binário mínimo |
-| 2 | `chore: add formatting, lint and test CI` | Proteções do `main` |
-| 3 | `feat(server): load and validate configuration` | Configuração determinística |
-| 4 | `feat(server): initialize structured tracing` | Diagnóstico padronizado |
-| 5 | `feat(server): model application lifecycle` | Estados explícitos |
-| 6 | `docs: decide health check transport` | ADR aceita |
-| 7 | `feat(server): expose liveness and readiness` | Saúde testável |
-| 8 | `feat(server): implement graceful shutdown` | Encerramento controlado |
-| 9 | `test: verify server process lifecycle` | Teste de ponta a ponta da fase |
-| 10 | `docs: add local development guide` | Fase reproduzível |
+- liveness que verifica somente o processo;
+- readiness que considera configuração obrigatória;
+- comportamento correto durante startup e encerramento.
 
-Cada issue deve copiar os critérios relevantes deste documento e permanecer
-pequena o suficiente para um pull request focado.
+Aceite: a plataforma de hospedagem consegue decidir quando enviar tráfego.
 
-## 7. Testes mínimos da fase
+### F1.6 — Configurar CORS
 
-- inicialização com valores padrão;
-- inicialização com arquivo válido;
-- rejeição de configuração inválida;
-- precedência das fontes de configuração;
-- disponibilidade da verificação de saúde após prontidão;
-- remoção da prontidão durante encerramento;
-- encerramento normal dentro do prazo;
-- código de saída correto após falha de inicialização;
-- ausência de segredo conhecido nos logs capturados.
+Entregáveis:
 
-## 8. Decisões que bloqueiam tarefas
+- origens permitidas por configuração;
+- métodos e headers mínimos;
+- política distinta para desenvolvimento e produção.
 
-Antes da respectiva implementação, devem ser resolvidas:
+Aceite: a origem do Pages funciona; origem inesperada não recebe autorização do
+navegador; não existe curinga com credenciais.
 
-1. runtime assíncrono e modelo inicial de concorrência;
-2. transporte da verificação de saúde;
-3. formato do arquivo e prefixo das variáveis de ambiente;
-4. política de versão mínima do Rust;
-5. ferramentas de auditoria e política de atualização de dependências.
+### F1.7 — Adicionar observabilidade
 
-Cada decisão deve ser pequena. Runtime e transporte de saúde provavelmente
-merecem ADR; convenções reversíveis podem ser registradas no próprio pull
-request e na documentação de desenvolvimento.
+Entregáveis:
 
-## 9. Critério de saída da Fase 1
+- logs estruturados de startup, request e encerramento;
+- duração e status por requisição;
+- redaction de headers sensíveis;
+- teste que procura um segredo conhecido na saída capturada.
 
-A Fase 1 termina somente quando:
+Aceite: uma falha pode ser correlacionada pelo request ID sem registrar conteúdo.
 
-- todos os itens F1.1 a F1.7 atendem aos critérios de aceite;
-- a CI está verde no `main`;
-- o binário inicia, fica pronto e encerra de forma controlada;
-- a configuração inválida falha antes de abrir recursos;
-- a verificação de saúde é coberta por teste de integração;
-- os comandos de desenvolvimento funcionam em clone limpo;
-- limitações e decisões tomadas estão documentadas;
-- nenhuma funcionalidade de mensageria foi implementada antecipadamente.
+### F1.8 — Configurar CI
 
-## 10. Preparação da Fase 2
+Entregáveis:
 
-Após concluir esta fase, criar a especificação da máquina de estados do domínio
-com cenários de publish, entrega, ACK, NACK e timeout. Somente então devem nascer
-`relay-core` e as primeiras filas em memória.
+- build, formatação, lint e testes em pull requests;
+- auditoria de dependências;
+- proteção contra commit acidental de segredos, quando viável.
+
+Aceite: uma falha impede integração no `main` e a suíte não requer serviço pago.
+
+### F1.9 — Publicar ambiente de desenvolvimento
+
+Entregáveis:
+
+- deploy reproduzível;
+- segredos/configuração pela plataforma;
+- health checks acessíveis por HTTPS;
+- rollback documentado.
+
+Aceite: o frontend ou um navegador consegue acessar a API respeitando CORS.
+
+### F1.10 — Documentar desenvolvimento local
+
+Entregáveis:
+
+- pré-requisitos, build, execução e testes;
+- exemplo de configuração sem segredo;
+- forma de apontar um frontend local para a API;
+- diagnóstico de erros comuns.
+
+Aceite: instruções funcionam a partir de um clone limpo.
+
+## 6. Testes mínimos
+
+- configuração padrão de desenvolvimento;
+- rejeição de configuração de produção incompleta;
+- geração e propagação de request ID;
+- formato seguro para erro não tratado;
+- liveness e readiness;
+- preflight da origem permitida;
+- ausência de autorização CORS para origem inesperada;
+- rejeição de corpo acima do limite;
+- ausência de segredo conhecido nos logs;
+- encerramento sem aceitar novas requisições.
+
+## 7. Critério de saída
+
+A fase termina quando a API está publicada por HTTPS, health checks funcionam,
+CORS permite o frontend esperado, logs são seguros, a CI está verde e o processo
+é reproduzível a partir de um clone limpo. Nenhuma chamada de IA ou GitHub deve
+ter sido implementada antecipadamente.
+
+O passo seguinte será criar um endpoint de chat com provedor simulado e validar
+streaming e cancelamento antes de usar uma chave real.

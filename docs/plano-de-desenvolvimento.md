@@ -5,241 +5,151 @@ Status: **Planejado**
 
 ## 1. Objetivo
 
-Desenvolver um message broker single-node em Rust para estudar e demonstrar,
-de forma explícita, os fundamentos de sistemas de mensageria: filas, entrega,
-confirmação, reentrega, backpressure, protocolo de rede e persistência.
+Construir uma API pequena e segura que permita a um frontend estático conversar
+com um provedor de IA sem expor credenciais. Integrações com a API do GitHub
+serão adicionadas somente quando o caso de uso exigir.
 
-O desenvolvimento deve produzir incrementos executáveis e testáveis. Cada fase
-introduz apenas a complexidade necessária para validar o próximo comportamento.
-
-## 2. Resultado esperado da primeira versão estável
-
-A v1 deve permitir que processos independentes:
-
-1. iniciem uma conexão TCP com o Relay;
-2. criem filas e tópicos;
-3. publiquem mensagens;
-4. consumam mensagens individualmente ou em grupo;
-5. confirmem ou rejeitem entregas;
-6. recuperem mensagens duráveis após uma reinicialização;
-7. encaminhem mensagens que excederam as tentativas para uma dead-letter queue;
-8. observem a saúde e as métricas básicas do servidor.
-
-A v1 é single-node. Clustering, replicação, exactly-once, painel web e transações
-entre filas não fazem parte desse compromisso.
-
-## 3. Estratégia de evolução
+## 2. Ordem de desenvolvimento
 
 ```text
-fundação
-   |
-   v
-domínio em memória
-   |
-   v
-protocolo + TCP + CLI
-   |
-   v
-ACK, retry, TTL e dead-letter
-   |
-   v
-persistência + recuperação
-   |
-   v
-tópicos + grupos de consumidores
-   |
-   v
-operação + estabilização
+decisões técnicas
+       |
+       v
+fundação HTTP + configuração + CI
+       |
+       v
+chat simulado + contrato + streaming
+       |
+       v
+provedor real + limites + cancelamento
+       |
+       v
+integração com frontend no GitHub Pages
+       |
+       v
+autenticação / GitHub / persistência, se necessários
 ```
 
-Não se deve iniciar persistência antes de o modelo de entrega em memória estar
-correto. Também não se deve criar SDKs antes de o protocolo ter uma primeira
-especificação executável.
+O contrato e os controles do Relay devem funcionar primeiro com um provedor
+simulado. Isso evita usar custo externo para validar CORS, streaming, erros e
+cancelamento.
 
-## 4. Fases de desenvolvimento
+## 3. Fases
 
-| Fase | Entrega principal | Dependência |
+| Fase | Entrega | Critério principal |
 | --- | --- | --- |
-| 1 — Fundação | Workspace, servidor mínimo, configuração, logs e CI | Nenhuma |
-| 2 — Domínio | Filas em memória e máquina de estados de entrega | Fase 1 |
-| 3 — Comunicação | Protocolo TCP, sessões e CLI | Fase 2 |
-| 4 — Confiabilidade | ACK/NACK, timeout, retry, TTL e dead-letter | Fase 3 |
-| 5 — Durabilidade | Log, recovery, snapshot e compactação | Fase 4 |
-| 6 — Roteamento | Tópicos, bindings e grupos de consumidores | Fase 5 |
-| 7 — Operação | Métricas, diagnóstico, benchmarks e hardening | Fase 6 |
-| 8 — v1 | Compatibilidade, documentação e release estável | Fase 7 |
+| 0 — Decisões | Stack, hosting de prova e streaming definidos | ADRs aceitas |
+| 1 — Fundação | API mínima, config, CORS, health, logs e CI | deploy acessível |
+| 2 — Chat simulado | Contrato e streaming sem IA real | frontend recebe deltas |
+| 3 — IA | Adaptador real, timeout, limites e cancelamento | conversa controlada |
+| 4 — Integração | Site do Pages usando Relay | fluxo completo em produção |
+| 5 — Proteção | Antiabuso, orçamento e autenticação necessária | uso sustentável |
+| 6 — GitHub | Login ou ferramentas autorizadas, se necessário | permissões mínimas |
+| 7 — Estabilização | testes, privacidade, métricas e documentação | release v1 |
 
-Cada fase deve terminar com uma demonstração reproduzível, testes automatizados
-e documentação do comportamento entregue.
+## 4. Estrutura lógica
 
-## 5. Estrutura planejada do workspace
+Independentemente da linguagem, o código deve separar:
 
-```text
-Relay/
-├── Cargo.toml                 # workspace e configuração compartilhada
-├── Cargo.lock                 # dependências reproduzíveis
-├── crates/
-│   ├── relay-core/            # domínio e máquina de estados
-│   ├── relay-protocol/        # frames, comandos e codecs
-│   ├── relay-storage/         # log, recovery, snapshot e compactação
-│   ├── relay-server/          # processo, rede, configuração e ciclo de vida
-│   ├── relay-cli/             # administração, publicação e consumo
-│   └── relay-testkit/         # relógio controlável e fixtures de integração
-├── docs/                      # especificações e decisões
-├── examples/                  # cenários completos de uso
-├── benchmarks/                # workloads reproduzíveis
-└── sdk/                       # clientes externos futuros
-```
+- **API:** HTTP, validação, CORS e representação de erros;
+- **Application:** caso de uso do chat e políticas de limite;
+- **Domain:** tipos independentes de framework e provedor;
+- **Integrations:** adaptadores de IA e GitHub;
+- **Infrastructure:** configuração, logs, métricas e persistência;
+- **Host:** composição, startup, prontidão e encerramento.
 
-Essa é uma estrutura-alvo, não uma ordem para criar crates vazios. Cada crate
-deve nascer somente quando houver responsabilidade real e independente.
+O MVP pode existir em um único projeto. Separação lógica não significa criar
+vários pacotes, serviços ou repositórios prematuramente.
 
-## 6. Responsabilidades e dependências
+## 5. Regras de dependência
 
 ```text
-relay-cli ---------> relay-protocol
-                         ^
-                         |
-relay-server ------> relay-protocol
-     |                   |
-     +--------------> relay-core <------ relay-storage
-                           ^
-                           |
-                     relay-testkit
+HTTP ------> caso de uso ------> domínio
+  |               |
+  |               v
+  +--------> porta do provedor <------ adaptador de IA
+
+host ------> configuração / observabilidade
 ```
 
-Regras:
+- O domínio não referencia framework web nem SDK de IA.
+- O caso de uso depende de uma interface de provedor.
+- O adaptador converte tipos externos para tipos internos.
+- A API não retorna objetos do SDK de terceiros.
+- A integração GitHub não é dependência obrigatória do chat.
 
-- `relay-core` não conhece TCP, arquivos, CLI nem runtime assíncrono.
-- `relay-protocol` traduz bytes e comandos, mas não decide regras de negócio.
-- `relay-storage` persiste eventos do domínio, sem conhecer conexões de clientes.
-- `relay-server` compõe os módulos e controla o ciclo de vida do processo.
-- `relay-cli` é um cliente do protocolo, nunca um atalho para acessar o core.
-- `relay-testkit` deve existir apenas quando fixtures compartilhadas forem úteis.
-- Dependências cíclicas entre crates não são permitidas.
+## 6. Estratégia de testes
 
-## 7. Modelo inicial do domínio
-
-Os nomes ainda podem mudar, mas o domínio deverá representar explicitamente:
-
-| Conceito | Responsabilidade |
+| Nível | Validação |
 | --- | --- |
-| `Message` | ID, payload imutável, headers e metadados de publicação |
-| `Queue` | Mensagens disponíveis, em voo e agendadas |
-| `Delivery` | Consumidor, tentativa e prazo de visibilidade |
-| `Consumer` | Identidade da sessão e capacidade disponível |
-| `RetryPolicy` | Limite, intervalo e destino após esgotamento |
-| `BrokerCommand` | Operação solicitada ao domínio |
-| `BrokerEvent` | Alteração válida que poderá ser persistida |
+| Unitário | regras, limites, erros e montagem do pedido |
+| Contrato | JSON, status HTTP e sequência de eventos |
+| Integração | pipeline HTTP com provedor simulado |
+| Segurança | CORS, tamanho máximo, headers e dados em logs |
+| Falhas | timeout, cancelamento, rate limit e provedor indisponível |
+| Ponta a ponta | frontend publicado chamando ambiente do Relay |
 
-Estado mínimo de uma mensagem:
+Testes comuns não devem consumir uma API paga. O adaptador real terá poucos
+testes controlados, separados da suíte padrão e sem registrar conteúdo.
 
-```text
-publicada -> disponível -> em voo -> confirmada
-                ^             |
-                |             +-> retry agendado
-                |                       |
-                +-----------------------+
-                                        |
-                                        +-> dead-letter
-```
+## 7. Processo por tarefa
 
-Transições inválidas devem resultar em erro de domínio, e não ser ignoradas.
+1. confirmar fase e critérios de aceite;
+2. registrar decisão difícil de reverter;
+3. definir teste e impacto de segurança;
+4. implementar o menor incremento observável;
+5. executar formatação, lint, testes e auditoria;
+6. verificar que nenhum segredo ou conteúdo foi registrado;
+7. atualizar contrato e documentação;
+8. integrar por pull request pequeno.
 
-## 8. Decisões técnicas iniciais
+## 8. Definition of Done
 
-Já definidas por ADR:
+Uma tarefa termina quando:
 
-- Rust estável como linguagem de implementação;
-- single-node até a v1;
-- protocolo versionado desde o primeiro frame.
+- critérios de aceite estão comprovados;
+- entradas, tempo e recursos possuem limites;
+- cancelamento é propagado quando aplicável;
+- erros públicos são estáveis e seguros;
+- logs possuem request ID e não possuem conteúdo sensível;
+- testes não dependem desnecessariamente de internet ou API paga;
+- documentação representa o comportamento entregue;
+- CI está verde e o deploy pode ser revertido.
 
-Decisões que devem ser tomadas durante as fases, com ADR própria quando
-necessário:
+## 9. Observabilidade mínima
 
-- runtime assíncrono e estratégia de concorrência;
-- formato do corpo dos frames;
-- formato dos registros persistidos e checksum;
-- garantia utilizada para `fsync` e confirmação de publicação;
-- estratégia de snapshot e compactação;
-- formato e endpoint das métricas;
-- política de compatibilidade do protocolo e do armazenamento.
+Registrar:
 
-Não escolher uma tecnologia apenas por popularidade. A decisão deve registrar
-restrições, alternativas e o custo operacional introduzido.
+- request ID;
+- rota e método;
+- status e duração;
+- provedor e modelo por identificador não secreto;
+- sucesso, timeout, cancelamento ou erro categorizado;
+- métricas agregadas de uso quando fornecidas.
 
-## 9. Estratégia de testes
+Não registrar:
 
-| Nível | O que validar |
-| --- | --- |
-| Unitário | Regras, validação e transições do domínio |
-| Máquina de estados | Sequências de publish, deliver, ACK, NACK e timeout |
-| Propriedades | Parser, framing e recuperação diante de entradas arbitrárias |
-| Integração | Servidor e clientes reais comunicando-se por TCP |
-| Falhas | Queda de conexão, escrita parcial, restart e cliente lento |
-| Carga | Memória limitada, throughput, latência e fairness |
-| Compatibilidade | Cliente e servidor em versões suportadas |
+- mensagem, histórico ou resposta;
+- prompts internos;
+- headers de autenticação;
+- chaves, cookies ou tokens;
+- resposta bruta de erro do provedor.
 
-O relógio usado por TTL, timeout e retry deve ser injetável. Os testes não devem
-depender de `sleep` longo nem de condições de corrida para validar tempo.
-
-## 10. Processo de desenvolvimento
-
-Para cada item do backlog:
-
-1. confirmar o comportamento e os critérios de aceite;
-2. registrar uma ADR se a solução trouxer uma decisão difícil de reverter;
-3. escrever ou ajustar o teste do comportamento;
-4. implementar a menor alteração que satisfaça o contrato;
-5. executar formatação, linter, testes e verificações de segurança;
-6. atualizar documentação e exemplos afetados;
-7. abrir um pull request pequeno e revisável.
-
-Sugestão para branches: `feat/<tema>`, `fix/<tema>`, `docs/<tema>` e
-`chore/<tema>`. A branch `main` deve permanecer compilável e testada.
-
-## 11. Definition of Done
-
-Uma tarefa só está concluída quando:
-
-- os critérios de aceite foram atendidos;
-- o comportamento possui teste proporcional ao risco;
-- não existem warnings de compilação ou lint;
-- erros possuem contexto e não são silenciosamente descartados;
-- logs não expõem payloads ou credenciais por padrão;
-- documentação pública e ADRs foram atualizadas quando necessário;
-- o pull request explica problema, solução, validação e trade-offs;
-- não há crescimento de escopo não registrado.
-
-Uma fase só está concluída quando sua demonstração e seus critérios de saída
-podem ser reproduzidos a partir de um clone limpo.
-
-## 12. Práticas de qualidade
-
-- Formatação automática obrigatória.
-- Linter tratado como erro na CI.
-- `unsafe` proibido por padrão e documentado quando inevitável.
-- Dependências mínimas, com licença e finalidade conhecidas.
-- Payload de mensagens nunca registrado por padrão.
-- Buffers, canais, filas e tamanhos de frames sempre limitados.
-- Benchmarks não substituem testes de correção.
-- Otimizações devem apresentar medição antes e depois.
-
-## 13. Riscos principais
+## 10. Riscos
 
 | Risco | Controle |
 | --- | --- |
-| Escopo semelhante a brokers maduros | Manter limites explícitos da v1 |
-| Concorrência difícil de reproduzir | Estado com proprietário único e testes determinísticos |
-| Uso ilimitado de memória | Limites e backpressure desde a fase em memória |
-| Corrupção após queda | Checksums, registros atômicos e testes de escrita parcial |
-| Protocolo acidentalmente estável | Marcar v0.x como experimental e versionar frames |
-| Otimização prematura | Criar baseline antes de alterar arquitetura por desempenho |
-| Crates excessivamente fragmentados | Extrair módulos somente com responsabilidade comprovada |
+| Chave exposta no Pages | segredo existe apenas no ambiente do Relay |
+| Endpoint público usado por terceiros | antiabuso, rate limit e orçamento |
+| Custo inesperado de IA | limites por requisição e alertas agregados |
+| Resposta interrompida | streaming com cancelamento e erro explícito |
+| Acoplamento ao provedor | porta interna e adaptador |
+| Dados sensíveis em logs | política deny-by-default e testes |
+| Free tier incompatível | prova de streaming, timeout e cold start |
+| Escopo crescer cedo | GitHub, banco e múltiplos modelos após o MVP |
 
-## 14. Próximo passo
+## 11. Próxima ação
 
-O desenvolvimento deve começar exclusivamente pela
-[Fase 1: fundação](fase-01-fundacao.md). A máquina de estados de mensagens será
-planejada em detalhe ao final dessa fase, usando o servidor mínimo e o ambiente
-de testes já validados.
+Resolver as decisões bloqueadoras e executar a
+[Fase 1: fundação](fase-01-fundacao.md). Não iniciar autenticação GitHub ou banco
+antes de validar o chat simulado entre o Pages e o Relay.

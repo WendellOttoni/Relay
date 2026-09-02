@@ -1,90 +1,84 @@
 # Roadmap
 
-The roadmap is organized around demonstrable behavior. Dates are intentionally
-absent; a milestone is complete only when its exit criteria are met.
+O roadmap não possui datas artificiais. Cada marco termina quando seu
+comportamento pode ser demonstrado e seus critérios estão automatizados.
 
-## v0.1 — Foundation
+## v0.1 — Fundação
 
-- Rust workspace and crate boundaries.
-- Configuration precedence and validation.
-- Structured error model and tracing conventions.
-- CI for formatting, linting, tests, and dependency audit.
+- stack e deploy decididos;
+- API mínima com configuração validada;
+- health checks, request ID, erros e logs;
+- CORS restrito e limites básicos;
+- CI e ambiente de desenvolvimento publicado.
 
-**Exit:** a documented server process starts, validates configuration, reports
-health, and shuts down cleanly.
+**Saída:** o frontend consegue acessar uma API vazia e segura por HTTPS.
 
-## v0.2 — In-memory broker
+## v0.2 — Chat simulado
 
-- Queue declaration and deletion.
-- Publish and consume.
-- ACK/NACK and visibility timeout.
-- Bounded queues and producer backpressure.
+- contrato versionado;
+- provedor falso determinístico;
+- streaming e cancelamento;
+- estados de loading, sucesso e erro no frontend de teste;
+- testes de contrato e desconexão.
 
-**Exit:** deterministic state-machine and integration tests demonstrate
-at-most-once and at-least-once delivery.
+**Saída:** fluxo completo funciona sem chave e sem custo externo.
 
-## v0.3 — TCP protocol and CLI
+## v0.3 — Provedor de IA
 
-- Versioned frame codec and handshake.
-- Client sessions and request correlation.
-- CLI for queue administration, publish, and consume.
-- Fuzz/property tests for frame parsing.
+- primeiro adaptador real;
+- segredo apenas no backend;
+- timeout, limites de contexto e saída;
+- erros normalizados;
+- métricas agregadas de duração e consumo.
 
-**Exit:** separate processes exchange messages over TCP, and malformed frames
-cannot crash or exhaust the server.
+**Saída:** chat real funciona sem expor credenciais nem conteúdo em logs.
 
-## v0.4 — Reliability controls
+## v0.4 — Integração com GitHub Pages
 
-- Retry policies and delayed redelivery.
-- Dead-letter queues.
-- Message TTL and queue limits.
-- Consumer cancellation and connection recovery behavior.
+- URL do Relay configurada no build do frontend;
+- CORS de produção;
+- streaming validado no navegador;
+- mensagens de erro e retry adequadas;
+- documentação de deploy e rollback.
 
-**Exit:** fault-oriented tests cover disconnects, poison messages, and slow
-consumers without unbounded resource growth.
+**Saída:** usuário acessa o Pages e conversa pelo Relay em produção.
 
-## v0.5 — Durability
+## v0.5 — Proteção pública
 
-- Append-only record format with checksums.
-- Durable publisher confirmation.
-- Startup recovery and torn-write handling.
-- Snapshots and log compaction.
+- mecanismo antiabuso;
+- limites por sessão e globais;
+- orçamento e alertas;
+- tratamento de indisponibilidade e overload;
+- política de privacidade.
 
-**Exit:** crash-injection tests prove acknowledged durable messages recover and
-partial records are safely ignored.
+**Saída:** o endpoint pode permanecer público dentro de limites conhecidos.
 
-## v0.6 — Topics and consumer groups
+## v0.6 — Integração GitHub opcional
 
-- Topic declaration and queue bindings.
-- Fan-out delivery.
-- Competing consumers within a group.
-- Subscription lifecycle and cleanup.
+- autenticação adequada ao caso de uso;
+- permissões mínimas;
+- consentimento explícito;
+- contexto de repositório delimitado;
+- auditoria de operações sensíveis.
 
-**Exit:** routing behavior has a precise contract and end-to-end test matrix.
+**Saída:** caso de uso GitHub definido funciona sem ampliar permissões do chat.
 
-## v0.7 — Operations
+## v0.7 — Persistência opcional
 
-- Metrics for throughput, depth, latency, retries, and failures.
-- Health and readiness endpoints.
-- Configuration reload policy.
-- Backup and recovery documentation.
+- contas e propriedade dos dados;
+- armazenamento de conversas, se necessário;
+- retenção, exclusão e exportação;
+- migrações e backup;
+- testes de autorização.
 
-**Exit:** an operator can diagnose queue pressure and execute a documented
-recovery drill.
+**Saída:** dados persistidos possuem ciclo de vida e dono claros.
 
-## v1.0 — Stable release
+## v1.0 — Estabilização
 
-- Stable protocol and persistence compatibility policy.
-- Rust SDK and complete examples.
-- Security and performance review.
-- Reproducible benchmark suite and published baseline.
-- Deployment and upgrade guides.
+- contrato e política de compatibilidade;
+- segurança e privacidade revisadas;
+- observabilidade e runbooks;
+- testes de carga e limites publicados;
+- instalação, operação e contribuição documentadas.
 
-**Exit:** all guarantees, limits, and unsupported scenarios are documented and
-tested.
-
-## Explicitly later
-
-Clustering, replication, transactions across queues, exactly-once delivery,
-WebSocket transport, additional SDKs, and a management dashboard may be
-explored only after the single-node core is reliable.
+**Saída:** garantias e limitações estão documentadas e verificadas.

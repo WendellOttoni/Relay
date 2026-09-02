@@ -1,20 +1,21 @@
-# NNNN — Decision title
+# NNNN — Título da decisão
 
-- Status: Proposed
-- Date: YYYY-MM-DD
+- Status: Proposta
+- Data: AAAA-MM-DD
 
-## Context
+## Contexto
 
-What problem, constraint, or force requires a decision?
+Qual problema, restrição ou risco exige uma decisão?
 
-## Decision
+## Decisão
 
-What will we do?
+O que será feito?
 
-## Consequences
+## Consequências
 
-What becomes easier or harder? Include operational and compatibility costs.
+O que fica mais simples ou mais difícil? Inclua custos operacionais e de
+segurança.
 
-## Alternatives considered
+## Alternativas consideradas
 
-What credible alternatives were rejected, and why?
+Quais opções reais foram rejeitadas e por quê?

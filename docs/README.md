@@ -1,39 +1,30 @@
-# Documentação do Relay
+# Documentação
 
-Este diretório concentra a especificação técnica e o planejamento do projeto.
-Antes de implementar uma funcionalidade, confirme em qual fase ela se encaixa,
-quais módulos serão afetados e quais critérios precisam ser atendidos.
+Esta documentação define o Relay antes da implementação. Ela deve impedir que
+decisões de infraestrutura sejam confundidas com requisitos do produto.
 
-## Comece por aqui
+## Ordem de leitura
 
-1. [Plano de desenvolvimento](plano-de-desenvolvimento.md) — escopo, ordem de
-   implementação, estrutura do workspace e processo de trabalho.
-2. [Fase 1: fundação](fase-01-fundacao.md) — primeiro ciclo de desenvolvimento,
-   dividido em tarefas pequenas e verificáveis.
-3. [Arquitetura](architecture.md) — componentes, limites e invariantes do broker.
-4. [Roadmap](roadmap.md) — evolução planejada da v0.1 até a v1.0.
-5. [Protocolo](protocol.md) — restrições e questões abertas do protocolo TCP.
-6. [ADRs](adr/README.md) — decisões de arquitetura e suas justificativas.
+1. [Arquitetura](arquitetura.md) — componentes, fluxo e limites de confiança.
+2. [Plano de desenvolvimento](plano-de-desenvolvimento.md) — fases e processo.
+3. [Fase 1: fundação](fase-01-fundacao.md) — primeiro backlog executável.
+4. [Contrato da API](api.md) — proposta inicial para frontend e backend.
+5. [Deploy](deploy.md) — relação entre GitHub Pages e hospedagem da API.
+6. [Decisões pendentes](decisoes-pendentes.md) — escolhas necessárias antes do código.
+7. [Roadmap](roadmap.md) — evolução do MVP até uma versão estável.
+8. [ADRs](adr/README.md) — decisões aceitas e suas justificativas.
 
-## Função de cada documento
+## Responsabilidade dos documentos
 
-| Documento | Pergunta respondida |
+| Documento | Pergunta |
 | --- | --- |
-| Plano de desenvolvimento | Como o projeto deve ser construído? |
-| Especificação da fase | O que deve ser feito agora? |
-| Arquitetura | Quais são os componentes e seus limites? |
-| Roadmap | O que será entregue e em qual ordem? |
-| Protocolo | Como clientes e servidor se comunicarão? |
-| ADR | Por que uma decisão importante foi tomada? |
+| Arquitetura | Como as partes se relacionam? |
+| Plano | Em qual ordem construir? |
+| Fase atual | O que fazer agora e como validar? |
+| API | Qual contrato o frontend pode usar? |
+| Deploy | Onde cada parte executa? |
+| Decisões pendentes | O que ainda não pode ser presumido? |
+| ADR | Por que uma escolha importante foi feita? |
 
-## Regra de atualização
-
-- Uma mudança de escopo deve atualizar o plano ou o roadmap.
-- Uma decisão difícil de reverter deve gerar uma ADR.
-- Uma mudança observável no comportamento deve atualizar sua especificação.
-- Uma fase concluída deve registrar evidências para todos os critérios de saída.
-
-Os documentos de arquitetura, roadmap, protocolo e ADRs foram inicialmente
-escritos em inglês. A documentação operacional e o planejamento inicial estão
-em português; a tradução dos documentos restantes pode ocorrer sem alterar as
-decisões registradas.
+Mudanças em autenticação, contrato público, armazenamento de conversas ou
+tratamento de segredos exigem atualização da documentação antes da integração.

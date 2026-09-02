@@ -1,12 +1,18 @@
-# Security policy
+# Política de segurança
 
-Relay has no stable release yet and must not be used for sensitive or
-production workloads.
+O Relay ainda não possui versão estável e não deve ser utilizado em produção.
 
-If you discover a vulnerability, use GitHub's private vulnerability reporting
-feature for this repository. Include the affected revision, reproduction
-steps, impact, and any suggested mitigation. Please do not open a public issue
-until a fix or coordinated disclosure plan is available.
+## Regras fundamentais
 
-Only the latest released minor version will receive security fixes after the
-first stable release. This policy will be reviewed before v1.0.
+- Chaves de IA, segredos OAuth e tokens do GitHub existem apenas no backend.
+- Segredos são fornecidos pelo ambiente da hospedagem, nunca pelo repositório.
+- CORS restringe navegadores, mas não substitui autenticação ou controle de abuso.
+- Prompts, respostas, tokens e credenciais não são registrados por padrão.
+- Entrada, saída, duração, concorrência e consumo possuem limites configuráveis.
+- Respostas de erro não expõem stack traces nem respostas brutas de provedores.
+
+## Relato de vulnerabilidades
+
+Use o recurso de relato privado de vulnerabilidades do GitHub para este
+repositório. Informe revisão afetada, reprodução, impacto e possível mitigação.
+Não abra uma issue pública antes de existir correção ou plano de divulgação.

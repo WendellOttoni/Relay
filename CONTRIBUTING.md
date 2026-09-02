@@ -1,41 +1,29 @@
-# Contributing to Relay
+# Como contribuir
 
-Relay is in its design phase. Contributions that clarify requirements,
-challenge an invariant, or add a reproducible experiment are as valuable as
-code.
+O Relay está em planejamento. Antes de implementar algo, confirme que o item
+faz parte da fase atual e possui critérios de aceite documentados.
 
-## Before opening a change
+## Processo
 
-1. Search existing issues and architecture decisions.
-2. Open an issue before changing the wire protocol, storage format, delivery
-   semantics, or public API.
-3. Keep a pull request focused on one concern.
-4. Add or update documentation when behavior changes.
+1. Consulte o plano e as issues existentes.
+2. Abra uma issue para mudanças de contrato, autenticação ou arquitetura.
+3. Registre uma ADR para decisões difíceis de reverter.
+4. Mantenha cada pull request focado em um comportamento.
+5. Inclua testes e atualize a documentação afetada.
 
-## Architecture decisions
+Um pull request deve explicar problema, solução, validação, impacto de segurança
+e trade-offs. Nunca inclua chaves, tokens, prompts reais ou dados pessoais em
+commits, testes, logs ou exemplos.
 
-Decisions with a long-term compatibility or operational cost must be captured
-as an ADR in `docs/adr`. Copy the template, describe alternatives honestly,
-and submit it as `Proposed`. An ADR becomes `Accepted` only after review.
+## Qualidade esperada
 
-## Development expectations
+- formatação e lint sem erros;
+- testes proporcionais ao risco;
+- limites explícitos para entrada, saída e duração;
+- cancelamento propagado para chamadas externas;
+- erros públicos sem detalhes sensíveis;
+- logs estruturados com identificador de requisição;
+- dependências justificadas e atualizadas.
 
-Once implementation begins, every change is expected to pass formatting,
-linting, unit tests, and relevant integration tests. Unsafe Rust must include a
-written safety justification. Performance claims must include a reproducible
-benchmark and environment details.
-
-## Commit and pull request style
-
-Use a short imperative subject and explain the reason for non-obvious changes
-in the body. Pull requests should state:
-
-- the problem being solved;
-- the chosen approach and trade-offs;
-- how the change was verified;
-- any compatibility or migration impact.
-
-## Reporting security issues
-
-Do not disclose suspected vulnerabilities in a public issue. Follow the
-private reporting process in [SECURITY.md](SECURITY.md).
+Falhas de segurança devem seguir o processo privado descrito em
+[SECURITY.md](SECURITY.md).

@@ -1,26 +1,25 @@
-# Rust
-/target/
-**/*.rs.bk
-*.pdb
-
-# Relay runtime data
-/relay-data/
-*.relay
-*.wal
-*.log
-
-# Coverage and benchmarks
-/coverage/
-/criterion/
-*.profraw
-
-# Environment and local configuration
+# Segredos e configuração local
 .env
 .env.*
 !.env.example
-config.local.*
+*.local.json
+*.local.yml
+*.local.yaml
 
-# Editors and operating systems
+# Build, dependências e cobertura
+bin/
+obj/
+dist/
+build/
+coverage/
+node_modules/
+target/
+
+# Logs e dados locais
+*.log
+data/
+
+# Editores e sistema operacional
 .idea/
 .vscode/
 *.swp
@@ -28,6 +27,6 @@ config.local.*
 .DS_Store
 Thumbs.db
 
-# Temporary files
+# Temporários
 *.tmp
 *.bak
