@@ -1,0 +1,33 @@
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+
+# Relay runtime data
+/relay-data/
+*.relay
+*.wal
+*.log
+
+# Coverage and benchmarks
+/coverage/
+/criterion/
+*.profraw
+
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+config.local.*
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
