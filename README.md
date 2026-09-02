@@ -1,42 +1,43 @@
 # Relay
 
-> A small, reliable message broker built from scratch in Rust.
+> Um message broker pequeno e confiável, construído do zero em Rust.
 
-Relay is an educational systems project focused on the internals of message
-brokers: protocols, delivery guarantees, persistence, backpressure, and
-concurrency. The goal is not to replace production brokers, but to build a
-compact implementation whose behavior can be understood end to end.
+Relay é um projeto educacional de engenharia de sistemas focado nos mecanismos
+internos de um message broker: protocolos, garantias de entrega, persistência,
+backpressure e concorrência. O objetivo não é substituir brokers utilizados em
+produção, mas construir uma implementação compacta cujo comportamento possa ser
+compreendido de ponta a ponta.
 
 > [!IMPORTANT]
-> Relay is currently in the design phase. The repository contains the project
-> specification and architecture decisions; no usable broker has been released
-> yet.
+> O Relay está atualmente na fase de projeto. O repositório contém a
+> especificação e as decisões de arquitetura; ainda não existe uma versão
+> utilizável do broker.
 
-## Why Relay?
+## Por que Relay?
 
-Most messaging tutorials stop at an in-memory queue. Relay goes further by
-making the difficult parts visible and testable:
+A maioria dos tutoriais sobre mensageria termina em uma fila mantida em memória.
+O Relay pretende ir além, tornando as partes difíceis visíveis e testáveis:
 
-- queues and publish/subscribe topics;
-- explicit acknowledgements and redelivery;
-- bounded retries and dead-letter queues;
-- durable messages backed by an append-only log;
-- consumer groups and competing consumers;
-- flow control for slow clients;
-- a documented, versioned wire protocol;
-- metrics and operational visibility.
+- filas e tópicos publish/subscribe;
+- confirmações explícitas e reentrega de mensagens;
+- tentativas limitadas e filas de mensagens não processadas;
+- mensagens duráveis armazenadas em um log somente de acréscimo;
+- grupos de consumidores e consumidores concorrentes;
+- controle de fluxo para clientes lentos;
+- protocolo de comunicação documentado e versionado;
+- métricas e visibilidade operacional.
 
-## Planned experience
+## Experiência planejada
 
 ```text
-publisher                 Relay                     consumers
-    |                       |                           |
-    |--- PUBLISH orders --->|                           |
-    |<------- OK -----------|--- MESSAGE orders ------>|
-    |                       |<--------- ACK ------------|
+publicador                 Relay                    consumidores
+    |                        |                           |
+    |--- PUBLISH orders ---->|                           |
+    |<-------- OK -----------|--- MESSAGE orders ------>|
+    |                        |<--------- ACK ------------|
 ```
 
-The initial interface will be a TCP server and a small CLI:
+A interface inicial será composta por um servidor TCP e uma pequena CLI:
 
 ```console
 $ relay-server --data ./relay-data
@@ -45,90 +46,94 @@ $ relay-cli publish orders '{"order_id": 42}'
 $ relay-cli consume orders --group billing
 ```
 
-Command names and syntax are provisional until the protocol ADR is accepted.
+Os nomes e a sintaxe dos comandos são provisórios até que a ADR do protocolo
+seja aceita.
 
-## Scope
+## Escopo
 
-The first stable release is intended to provide:
+A primeira versão estável deverá oferecer:
 
-| Area | v1 target |
+| Área | Objetivo para a v1 |
 | --- | --- |
-| Messaging | Queues, topics, consumer groups |
-| Delivery | At-most-once and at-least-once |
-| Reliability | ACK/NACK, retry, dead-letter queues |
-| Persistence | Append-only log and recovery |
-| Networking | Versioned protocol over TCP |
-| Operations | Health checks, metrics, graceful shutdown |
-| Tooling | CLI administration and Rust client |
+| Mensageria | Filas, tópicos e grupos de consumidores |
+| Entrega | No máximo uma vez e pelo menos uma vez |
+| Confiabilidade | ACK/NACK, novas tentativas e filas de mensagens não processadas |
+| Persistência | Log somente de acréscimo e recuperação |
+| Rede | Protocolo versionado sobre TCP |
+| Operação | Verificação de saúde, métricas e desligamento seguro |
+| Ferramentas | CLI de administração e cliente Rust |
 
-Exactly-once delivery, clustering, a web dashboard, and multi-region
-replication are deliberately outside the v1 scope.
+Entrega exatamente uma vez, clustering, painel web e replicação entre regiões
+estão deliberadamente fora do escopo da v1.
 
-## Architecture
+## Arquitetura
 
 ```text
                          +------------------+
- publishers / consumers |   TCP transport  |
+publicadores/consumidores|  transporte TCP  |
  ----------------------> +---------+--------+
                                    |
                          +---------v--------+
-                         | protocol + auth  |
+                         | protocolo + auth |
                          +---------+--------+
                                    |
                     +--------------v---------------+
-                    | routing, queues and delivery |
+                    | roteamento, filas e entregas |
                     +------+----------------+-------+
                            |                |
                     +------v------+  +------v------+
-                    | scheduler   |  | persistence |
+                    | agendador   |  | persistência|
                     | ACK / retry |  | append log  |
                     +-------------+  +-------------+
 ```
 
-See [the architecture document](docs/architecture.md) for component
-boundaries, invariants, and the proposed repository layout.
+Consulte [o documento de arquitetura](docs/architecture.md) para conhecer os
+limites dos componentes, as invariantes e a estrutura proposta para o
+repositório.
 
 ## Roadmap
 
-- **v0.1 — Foundation:** workspace, configuration, error model, CI.
-- **v0.2 — In-memory broker:** queues, publish, consume, ACK/NACK.
-- **v0.3 — Wire protocol:** TCP framing, client sessions, CLI.
-- **v0.4 — Reliability:** retry policy, visibility timeout, dead letters.
-- **v0.5 — Durability:** append-only log, recovery, compaction.
-- **v0.6 — Pub/sub:** topics, subscriptions, consumer groups.
-- **v0.7 — Operations:** metrics, health checks, graceful shutdown.
-- **v1.0 — Stable:** compatibility policy, benchmarks, complete docs.
+- **v0.1 — Fundação:** workspace, configuração, modelo de erros e CI.
+- **v0.2 — Broker em memória:** filas, publicação, consumo e ACK/NACK.
+- **v0.3 — Protocolo:** frames TCP, sessões de clientes e CLI.
+- **v0.4 — Confiabilidade:** novas tentativas, tempo de visibilidade e mensagens não processadas.
+- **v0.5 — Durabilidade:** log somente de acréscimo, recuperação e compactação.
+- **v0.6 — Pub/sub:** tópicos, inscrições e grupos de consumidores.
+- **v0.7 — Operação:** métricas, verificações de saúde e desligamento seguro.
+- **v1.0 — Estável:** política de compatibilidade, benchmarks e documentação completa.
 
-Milestone definitions and exit criteria live in [the full roadmap](docs/roadmap.md).
+As definições e os critérios de conclusão de cada marco estão no
+[roadmap completo](docs/roadmap.md).
 
-## Design principles
+## Princípios de projeto
 
-1. **Correctness before throughput.** Delivery state must remain explainable.
-2. **Bounded resource use.** Queues and clients must apply backpressure.
-3. **Crash recovery is a feature.** Durable state must survive abrupt exits.
-4. **Small, explicit protocol.** Every frame is versioned and documented.
-5. **Measure, then optimize.** Performance work requires reproducible benchmarks.
+1. **Correção antes de desempenho.** O estado de entrega deve permanecer compreensível.
+2. **Uso limitado de recursos.** Filas e clientes devem aplicar backpressure.
+3. **Recuperação de falhas é uma funcionalidade.** O estado durável deve sobreviver a encerramentos abruptos.
+4. **Protocolo pequeno e explícito.** Todo frame deve ser versionado e documentado.
+5. **Medir antes de otimizar.** Melhorias de desempenho exigem benchmarks reproduzíveis.
 
-## Repository layout
+## Estrutura do repositório
 
 ```text
-crates/       planned Rust workspace crates
-docs/         architecture, protocol, roadmap, and ADRs
-examples/     planned end-to-end examples
-benchmarks/   planned reproducible performance scenarios
-sdk/          planned client libraries
+crates/       crates planejados para o workspace Rust
+docs/         arquitetura, protocolo, roadmap e ADRs
+examples/     exemplos completos planejados
+benchmarks/   cenários reproduzíveis de desempenho
+sdk/          bibliotecas cliente planejadas
 ```
 
-The directories currently contain contracts and ownership notes only. Source
-code will be introduced incrementally as roadmap milestones begin.
+Neste momento, os diretórios contêm apenas contratos e notas sobre suas
+responsabilidades. O código-fonte será introduzido gradualmente conforme os
+marcos do roadmap forem iniciados.
 
-## Status and contributing
+## Situação atual e contribuições
 
-The public API and wire protocol are not stable. Design feedback is welcome
-through issues and discussions. Before contributing, read
-[CONTRIBUTING.md](CONTRIBUTING.md) and the accepted
-[architecture decisions](docs/adr/README.md).
+A API pública e o protocolo de comunicação ainda não são estáveis. Sugestões
+sobre o projeto são bem-vindas por meio de issues e discussions. Antes de
+contribuir, leia o [guia de contribuição](CONTRIBUTING.md) e as
+[decisões de arquitetura](docs/adr/README.md) aceitas.
 
-## License
+## Licença
 
-Relay is available under the [MIT License](LICENSE).
+Relay está disponível sob a [Licença MIT](LICENSE).
