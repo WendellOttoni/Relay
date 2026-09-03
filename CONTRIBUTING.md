@@ -1,6 +1,6 @@
 # Como contribuir
 
-O Relay está em planejamento. Antes de implementar algo, confirme que o item
+O Relay está iniciando a Fase 1. Antes de implementar algo, confirme que o item
 faz parte da fase atual e possui critérios de aceite documentados.
 
 ## Processo
@@ -10,6 +10,9 @@ faz parte da fase atual e possui critérios de aceite documentados.
 3. Registre uma ADR para decisões difíceis de reverter.
 4. Mantenha cada pull request focado em um comportamento.
 5. Inclua testes e atualize a documentação afetada.
+
+Não antecipe Ecto, PostgreSQL, autenticação GitHub ou a chave real da OpenRouter
+antes dos marcos definidos no plano.
 
 Um pull request deve explicar problema, solução, validação, impacto de segurança
 e trade-offs. Nunca inclua chaves, tokens, prompts reais ou dados pessoais em
@@ -21,6 +24,7 @@ commits, testes, logs ou exemplos.
 - testes proporcionais ao risco;
 - limites explícitos para entrada, saída e duração;
 - cancelamento propagado para chamadas externas;
+- processos iniciados por Channels vinculados a uma árvore de supervisão;
 - erros públicos sem detalhes sensíveis;
 - logs estruturados com identificador de requisição;
 - dependências justificadas e atualizadas.

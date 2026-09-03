@@ -12,19 +12,21 @@ as regras necessárias antes de acessar serviços externos.
 ```text
                   limite público                    limite privado
 
-+---------------------------+        +----------------------------------+
-| GitHub Pages              | HTTPS  | Relay                            |
-|                           +------->|                                  |
-| HTML / CSS / JavaScript   |        | API + validação + limites        |
-| estado visual do chat     |<-------+ streaming + tratamento de erros  |
-+---------------------------+        +-----------+----------------------+
-                                                |
-                                      +---------+---------+
-                                      |                   |
-                                +-----v------+      +-----v------+
-                                | Provedor  |      | GitHub API |
-                                | de IA     |      | opcional   |
-                                +-----------+      +------------+
++---------------------------+          +--------------------------------+
+| GitHub Pages              | HTTPS    | Relay no Render                |
+| React / Vite              +--------->| sessão anônima + health        |
+| estado visual e histórico | WebSocket| Phoenix Channels + supervisão |
+| cliente Phoenix JS        +--------->| limites + adaptador de IA      |
++---------------------------+          +---------------+----------------+
+                                                     |
+                                                     | HTTPS + SSE
+                                               +-----v------+
+                                               | OpenRouter |
+                                               +-----+------+
+                                                     |
+                                               +-----v------+
+                                               | modelo IA  |
+                                               +------------+
 ```
 
 O repositório Relay contém somente o backend e sua documentação. O frontend do
@@ -41,21 +43,27 @@ permissões. A URL do Relay pode ser configuração pública de build.
 
 ### API HTTP
 
-Recebe requisições versionadas, valida corpo e headers, atribui um identificador,
-aplica autenticação quando existir, limita abuso e converte erros para um
-contrato estável.
+Expõe health checks e cria sessões anônimas após validação Turnstile. Valida
+corpo, origem e limites, atribui request ID e converte erros para um contrato
+estável. O conteúdo do chat não passa por um endpoint REST no MVP.
+
+### Socket e Channel
+
+O `UserSocket` valida o token curto emitido pela API HTTP. Cada conexão entra em
+um tópico `chat:<sessionId>`. O Channel aceita comandos de geração e cancelamento,
+publica deltas e mantém no máximo uma geração ativa.
 
 ### Serviço de chat
 
-Aplica regras independentes do provedor: tamanho do contexto, seleção de modelo
-permitido, timeout, cancelamento, orçamento e formato da resposta. Não deve
-conhecer detalhes do framework HTTP.
+Aplica regras independentes do provedor: tamanho do contexto, prompt permitido,
+timeout, cancelamento, orçamento e eventos da resposta. Expõe uma porta interna
+implementada por um provedor falso e pela OpenRouter.
 
 ### Adaptador de IA
 
-Traduz o pedido interno para o SDK ou HTTP do provedor e converte sua resposta
-para eventos internos. Apenas esse componente conhece a credencial e o formato
-específico do provedor.
+Usa `Req` para traduzir o pedido interno para a API Chat Completions da
+OpenRouter, consumir seu SSE e converter chunks para eventos internos. Apenas
+esse componente conhece a credencial e o formato específico do provedor.
 
 ### Integração com GitHub
 
@@ -65,20 +73,22 @@ aceitar do navegador um token administrativo para apenas retransmiti-lo.
 
 ### Persistência
 
-Não é necessária para o primeiro chat. Inicialmente, o histórico pode permanecer
-no navegador e ser enviado de forma limitada a cada interação. Persistência no
-servidor exige política de retenção, exclusão, privacidade e autenticação.
+Não existe no MVP. O histórico permanece no navegador e é enviado de forma
+limitada a cada geração. Processos da BEAM mantêm somente o estado transitório da
+conexão. PostgreSQL e Ecto entram apenas depois de definir proprietário,
+retenção, exclusão, privacidade e autenticação.
 
 ## 4. Fluxo do chat
 
 ```text
-1. Browser envia mensagem e contexto permitido.
-2. API valida formato, origem, sessão, tamanho e limite.
-3. Serviço de chat cria uma solicitação independente do provedor.
-4. Adaptador chama a IA com segredo obtido do ambiente.
-5. Eventos de texto são transmitidos ao browser.
-6. Cancelamento ou desconexão interrompe a chamada externa.
-7. Métricas registram duração e consumo, sem conteúdo da conversa.
+1. Browser resolve Turnstile e cria uma sessão anônima por HTTP.
+2. Browser conecta ao socket com token assinado e entra no próprio tópico.
+3. Channel valida `chat:generate`, limites e ausência de geração concorrente.
+4. Serviço de chat inicia uma Task monitorada usando a porta de provedor.
+5. Adaptador chama a OpenRouter com segredo e modelo obtidos do ambiente.
+6. Chunks SSE tornam-se eventos internos e depois `chat:delta`.
+7. `chat:cancel`, saída do Channel ou desconexão interrompem a chamada externa.
+8. Métricas registram duração e consumo, sem conteúdo da conversa.
 ```
 
 ## 5. Limites de confiança
@@ -96,59 +106,69 @@ A estrutura física dependerá da tecnologia escolhida, mas deve preservar estas
 responsabilidades:
 
 ```text
-src/
-├── api/                # endpoints, contratos e middleware
-├── application/        # casos de uso e políticas do chat
-├── domain/             # tipos e regras independentes de infraestrutura
-├── integrations/
-│   ├── ai/             # adaptadores de provedores
-│   └── github/         # autenticação e API do GitHub
-├── infrastructure/     # configuração, observabilidade e persistência
-└── host/               # composição e ciclo de vida
+lib/
+├── relay/
+│   ├── application.ex              # supervisão da aplicação OTP
+│   ├── chat/                       # caso de uso, políticas e porta do provedor
+│   ├── integrations/open_router/   # Req, SSE e normalização externa
+│   ├── sessions/                   # emissão e validação de sessão anônima
+│   └── rate_limit/                 # limites locais do experimento
+├── relay_web/
+│   ├── channels/                   # UserSocket e ChatChannel
+│   ├── controllers/                # sessão e health
+│   ├── plugs/                      # request ID, CORS e limites HTTP
+│   ├── endpoint.ex
+│   └── router.ex
+└── relay.ex
 
-tests/
-├── unit/
-├── integration/
-└── contract/
+test/
+├── relay/                          # regras e adaptadores
+├── relay_web/                      # conexão, Channel e HTTP
+├── support/                        # fakes e servidor externo controlado
+└── contract/                       # payloads e sequência de eventos
 ```
 
-Isso não exige múltiplos projetos ou pacotes desde o primeiro dia. A separação
-pode começar por pastas e evoluir quando houver necessidade real.
+O MVP é uma única aplicação OTP e um único release. Contextos e behaviours
+separam responsabilidades sem criar umbrella ou microsserviços.
 
 ## 7. Requisitos transversais
 
-- HTTPS obrigatório fora do ambiente local.
-- CORS com lista explícita de origens.
-- limite de tamanho antes de desserializar corpos grandes.
-- timeout e cancelamento propagados ao provedor.
-- rate limiting por sessão e sinais adicionais disponíveis.
-- budgets de uso configuráveis.
-- health checks distintos para processo vivo e pronto.
-- logs estruturados sem prompts, respostas ou credenciais.
-- identificador de requisição retornado ao cliente.
-- interface de provedor substituível em testes.
+- HTTPS obrigatório fora do ambiente local;
+- CORS com lista explícita de origens;
+- limite de tamanho antes de desserializar corpos grandes;
+- timeout e cancelamento propagados ao provedor;
+- rate limiting por sessão e sinais adicionais disponíveis;
+- orçamento de uso configurável;
+- health checks distintos para processo vivo e pronto;
+- logs estruturados sem prompts, respostas ou credenciais;
+- identificador de requisição retornado ao cliente;
+- interface de provedor substituível em testes;
+- `check_origin` no WebSocket e CORS explícito no HTTP;
+- uma geração ativa por sessão;
+- worker e Channel monitorados mutuamente para vincular seus ciclos de vida;
+- chave de emergência para desabilitar o chat.
 
 ## 8. Falhas esperadas
 
 | Falha | Comportamento esperado |
 | --- | --- |
-| Corpo inválido | `400` com código estável |
-| Sessão ausente quando exigida | `401` |
-| Sem permissão | `403` |
-| Limite excedido | `429` e orientação de retry |
-| Provedor indisponível | `502` ou `503`, sem resposta bruta |
-| Timeout | encerramento do stream e erro rastreável |
+| Corpo HTTP inválido | `400` com código estável |
+| Desafio ou origem recusados | `403` sem detalhes internos |
+| Sessão inválida no socket | conexão recusada |
+| Payload inválido no Channel | reply `invalid_request` |
+| Limite excedido | `429` no HTTP ou `rate_limit_exceeded` no Channel |
+| Provedor indisponível | evento `provider_unavailable`, sem resposta bruta |
+| Timeout | evento `provider_timeout` e encerramento da tarefa |
 | Browser desconectado | cancelamento do trabalho externo |
 | Configuração inválida | serviço não fica pronto |
 
-## 9. Questões deliberadamente abertas
+## 9. Decisões ainda evolutivas
 
-- linguagem e framework do backend;
-- provedor e modelo de IA inicial;
-- mecanismo antiabuso antes de existir login;
-- formato exato do streaming;
-- necessidade real de autenticação GitHub no MVP;
-- serviço de hospedagem do Relay;
-- retenção de conversas em fases futuras.
+- modelo exato da OpenRouter, escolhido por avaliação representativa;
+- prompt e personalidade do chatbot;
+- limite financeiro adequado ao público esperado;
+- necessidade real de autenticação GitHub;
+- persistência e retenção de conversas em fases futuras;
+- hospedagem definitiva depois do experimento gratuito.
 
-Essas escolhas estão organizadas em [decisões pendentes](decisoes-pendentes.md).
+Consulte [decisões pendentes](decisoes-pendentes.md).

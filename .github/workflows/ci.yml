@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        elixir: ["1.20.4"]
+        otp: ["29.0.6"]
+
+    env:
+      MIX_ENV: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Erlang and Elixir
+        uses: erlef/setup-beam@v1.24.1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+          version-type: strict
+
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Restore dependency caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: mix-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            mix-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-
+
+      - name: Install dependencies
+        run: mix deps.get --only test
+
+      - name: Require a reproducible dependency lock
+        shell: bash
+        run: test -f mix.lock
+
+      - name: Check formatting
+        run: mix format --check-formatted
+
+      - name: Compile without warnings
+        run: mix compile --warnings-as-errors
+
+      - name: Run tests
+        run: mix test
+
+      - name: Audit dependencies when configured
+        shell: bash
+        env:
+          MIX_ENV: dev
+        run: |
+          mix deps.get
+          if mix help deps.audit >/dev/null 2>&1; then
+            mix deps.audit
+          else
+            echo "mix deps.audit is not configured; skipping dependency audit."
+          fi
+
+      - name: Run Sobelow when configured
+        shell: bash
+        env:
+          MIX_ENV: dev
+        run: |
+          if mix help sobelow >/dev/null 2>&1; then
+            mix sobelow --exit
+          else
+            echo "Sobelow is not configured; skipping static security analysis."
+          fi
+
+  container:
+    name: Production container
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build release image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: relay:ci

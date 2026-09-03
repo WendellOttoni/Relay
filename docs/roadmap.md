@@ -5,39 +5,41 @@ comportamento pode ser demonstrado e seus critérios estão automatizados.
 
 ## v0.1 — Fundação
 
-- stack e deploy decididos;
-- API mínima com configuração validada;
+- Elixir/Phoenix, Channels e Render registrados em ADRs;
+- aplicação OTP mínima com configuração validada;
 - health checks, request ID, erros e logs;
-- CORS restrito e limites básicos;
-- CI e ambiente de desenvolvimento publicado.
+- CORS e origem do socket restritos;
+- CI e release publicados no Render Free.
 
-**Saída:** o frontend consegue acessar uma API vazia e segura por HTTPS.
+**Saída:** o frontend consegue acordar e acessar um Phoenix vazio por HTTPS.
 
-## v0.2 — Chat simulado
+## v0.2 — Channel com chat simulado
 
-- contrato versionado;
+- sessão anônima, socket e protocolo versionado;
 - provedor falso determinístico;
-- streaming e cancelamento;
+- eventos por Phoenix Channels e cancelamento da Task;
 - estados de loading, sucesso e erro no frontend de teste;
-- testes de contrato e desconexão.
+- Turnstile simulado, limites locais e testes de desconexão.
 
-**Saída:** fluxo completo funciona sem chave e sem custo externo.
+**Saída:** o Pages conversa por WebSocket com o Relay sem chave ou custo externo.
 
-## v0.3 — Provedor de IA
+## v0.3 — OpenRouter
 
-- primeiro adaptador real;
+- adaptador Req/SSE da OpenRouter;
 - segredo apenas no backend;
 - timeout, limites de contexto e saída;
 - erros normalizados;
-- métricas agregadas de duração e consumo.
+- Turnstile real, teto financeiro e chave de emergência;
+- métricas agregadas de duração e consumo, sem conteúdo.
 
-**Saída:** chat real funciona sem expor credenciais nem conteúdo em logs.
+**Saída:** chat real funciona dentro de um orçamento baixo sem expor credenciais
+nem conteúdo em logs.
 
 ## v0.4 — Integração com GitHub Pages
 
-- URL do Relay configurada no build do frontend;
-- CORS de produção;
-- streaming validado no navegador;
+- URLs HTTP/WebSocket configuradas no build do frontend;
+- CORS e `check_origin` do Pages;
+- cold start, heartbeat e reconexão validados no navegador;
 - mensagens de erro e retry adequadas;
 - documentação de deploy e rollback.
 
@@ -45,9 +47,9 @@ comportamento pode ser demonstrado e seus critérios estão automatizados.
 
 ## v0.5 — Proteção pública
 
-- mecanismo antiabuso;
-- limites por sessão e globais;
-- orçamento e alertas;
+- revisão do mecanismo antiabuso experimental;
+- limites distribuídos se houver múltiplas instâncias;
+- orçamento, alertas e resposta a incidentes;
 - tratamento de indisponibilidade e overload;
 - política de privacidade.
 

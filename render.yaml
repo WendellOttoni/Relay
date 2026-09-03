@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: relay
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health/ready
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: PHX_SERVER
+        value: "true"
+      - key: CHAT_ENABLED
+        value: "false"
+      - key: PHX_HOST
+        sync: false
+      - key: PUBLIC_SITE_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: SECRET_KEY_BASE
+        generateValue: true

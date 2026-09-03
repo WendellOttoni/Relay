@@ -7,6 +7,14 @@
 *.local.yaml
 
 # Build, dependências e cobertura
+/_build/
+/deps/
+/doc/
+/.tools/
+/.elixir_ls/
+/erl_crash.dump
+/cover/
+/*.ez
 bin/
 obj/
 dist/
@@ -30,3 +38,6 @@ Thumbs.db
 # Temporários
 *.tmp
 *.bak
+
+# Artefatos locais de release/deploy
+/.docker/

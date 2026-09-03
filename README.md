@@ -1,6 +1,7 @@
 # Relay
 
-> Backend seguro para conectar aplicações estáticas a serviços de IA e ao GitHub.
+> Backend experimental em Elixir/Phoenix para conectar um frontend estático a
+> modelos de IA pela OpenRouter.
 
 O Relay será a API utilizada por um frontend hospedado no GitHub Pages. O site
 continua estático e gratuito; operações que exigem segredos, autenticação,
@@ -8,8 +9,8 @@ controle de uso ou acesso a APIs externas são executadas pelo Relay, hospedado
 separadamente.
 
 > [!IMPORTANT]
-> O projeto está na fase de planejamento. Ainda não existe uma API pronta para
-> uso e a tecnologia do backend ainda será decidida.
+> A arquitetura foi decidida e o projeto está pronto para iniciar a implementação.
+> Ainda não existe uma API publicada.
 
 ## Por que existe um backend?
 
@@ -28,9 +29,9 @@ Frontend no GitHub Pages
    |
    | HTTPS
    v
-Relay API em outro serviço
+Relay em Elixir/Phoenix no Render
    |
-   +----> Provedor de IA
+   +----> OpenRouter / modelo configurado
    |
    +----> GitHub API / GitHub App (quando necessário)
    |
@@ -40,24 +41,42 @@ Relay API em outro serviço
 Hospedar o frontend gratuitamente não torna gratuitas as APIs consumidas. O
 serviço de IA, o backend ou o banco podem possuir limites ou custos próprios.
 
+## Stack escolhida
+
+| Área | Decisão |
+| --- | --- |
+| Frontend | React/Vite no GitHub Pages, em repositório separado |
+| Backend | Elixir 1.20, Erlang/OTP 29 e Phoenix 1.8 |
+| Tempo real | Phoenix Channels sobre WebSocket |
+| Cliente HTTP | Req |
+| IA | OpenRouter, com chave e modelo controlados pelo Relay |
+| Deploy experimental | Web Service gratuito do Render |
+| Proteção | Turnstile, sessão anônima curta, limites e teto financeiro |
+| Persistência | nenhuma no MVP; PostgreSQL/Ecto ficam adiados |
+
+As versões patch serão fixadas ao inicializar o projeto. Somente versões estáveis
+serão usadas.
+
 ## Primeiro caso de uso: chat
 
 O fluxo inicial planejado é:
 
-1. o usuário abre o site no GitHub Pages;
-2. o frontend envia a mensagem por HTTPS ao Relay;
-3. o Relay valida origem, sessão, tamanho e limite de uso;
-4. o Relay adiciona apenas o contexto permitido e chama o provedor de IA;
-5. a resposta é transmitida gradualmente ao navegador;
-6. erros são convertidos para um formato seguro e rastreável.
+1. o frontend obtém um desafio Cloudflare Turnstile;
+2. `POST /api/v1/sessions` valida o desafio e cria uma sessão anônima curta;
+3. o cliente conecta ao socket Phoenix e entra em `chat:<sessionId>`;
+4. `chat:generate` envia um histórico validado e limitado;
+5. o Relay adiciona o prompt de sistema e chama a OpenRouter com streaming;
+6. cada delta é convertido para um evento do Channel;
+7. cancelamento ou desconexão encerram a tarefa e a chamada externa;
+8. nenhum conteúdo da conversa é persistido ou registrado pelo Relay.
 
 ```text
-Browser                  Relay                 Provedor de IA
-   |                       |                          |
-   |--- POST /api/chat --->|                          |
-   |                       |------ request --------->|
-   |<------ stream --------|<----- stream -----------|
-   |                       |                          |
+Browser                Phoenix Channel               OpenRouter
+   |                          |                           |
+   |--- chat:generate ------>|                           |
+   |                          |--- stream: true -------->|
+   |<---- chat:delta --------|<------ delta -------------|
+   |--- chat:cancel -------->|--- encerra requisição ---->|
 ```
 
 Nenhuma chave do provedor será enviada ao frontend ou versionada no repositório.
@@ -77,13 +96,13 @@ só será adicionada quando houver um caso de uso e permissões claramente defin
 
 | Área | Entrega inicial |
 | --- | --- |
-| API | Endpoint versionado de chat |
-| Resposta | Streaming para o navegador |
+| API | Sessão anônima e health checks versionados |
+| Resposta | Phoenix Channels com eventos versionados |
 | Segurança | Segredos no servidor, validação e limites |
 | Navegador | CORS restrito ao domínio configurado |
 | Operação | Health checks, logs e identificador de requisição |
-| Integração | Adaptador para um provedor de IA |
-| Deploy | Backend HTTPS configurado por variáveis de ambiente |
+| Integração | Adaptador OpenRouter substituível por um provedor falso |
+| Deploy | Release Phoenix no Render Free |
 
 Login com GitHub, histórico persistente, múltiplos provedores, ferramentas para
 repositórios e painel administrativo não bloqueiam o primeiro MVP.
@@ -102,11 +121,12 @@ repositórios e painel administrativo não bloqueiam o primeiro MVP.
 Antes de iniciar o código:
 
 1. leia o [índice da documentação](docs/README.md);
-2. valide a [arquitetura](docs/arquitetura.md);
-3. decida a tecnologia usando os critérios registrados em
-   [decisões pendentes](docs/decisoes-pendentes.md);
-4. execute a [Fase 1: fundação](docs/fase-01-fundacao.md);
-5. siga o [plano de desenvolvimento](docs/plano-de-desenvolvimento.md).
+2. consulte a [arquitetura](docs/arquitetura.md);
+3. confira as decisões aceitas nos [ADRs](docs/adr/README.md);
+4. implemente a [Fase 1: fundação](docs/fase-01-fundacao.md);
+5. execute a [Fase 2: chat simulado](docs/fase-02-chat-simulado.md);
+6. siga o [protocolo dos Channels](docs/protocolo-channels.md);
+7. integre a OpenRouter na [Fase 3](docs/fase-03-openrouter.md).
 
 ## Situação atual
 
@@ -114,8 +134,10 @@ Antes de iniciar o código:
 - [x] Arquitetura inicial documentada.
 - [x] MVP e fases planejados.
 - [x] Riscos de segurança registrados.
-- [ ] Tecnologia do backend escolhida.
-- [ ] Contrato HTTP validado.
+- [x] Elixir/Phoenix e Phoenix Channels escolhidos.
+- [x] OpenRouter, protocolo e hospedagem experimental definidos.
+- [x] Persistência adiada conscientemente.
+- [x] Contratos HTTP e WebSocket documentados.
 - [ ] Implementação iniciada.
 
 ## Licença

@@ -1,9 +1,9 @@
 # Contrato inicial da API
 
-Status: **Proposta para validação**
+Status: **Aceito para o experimento**
 
-Este documento define o comportamento necessário para que o frontend possa ser
-desenvolvido sem depender diretamente do formato de um provedor de IA.
+Este documento define endpoints HTTP auxiliares. O chat usa Phoenix Channels e
+está especificado em [protocolo-channels.md](protocolo-channels.md).
 
 ## Convenções
 
@@ -24,65 +24,40 @@ Indica que o processo está vivo. Não acessa o provedor externo.
 
 Indica que configuração e dependências obrigatórias permitem receber tráfego.
 
-## Chat
+## Sessão anônima
 
-### `POST /api/v1/chat`
+### `POST /api/v1/sessions`
 
-Requisição proposta:
+Valida um desafio Turnstile e emite credenciais curtas para o socket.
+
+Requisição:
 
 ```json
 {
-  "conversationId": "opcional",
-  "messages": [
-    {
-      "role": "user",
-      "content": "Explique este trecho de código"
-    }
-  ]
+  "turnstileToken": "token gerado no navegador"
 }
 ```
 
-Regras:
+Resposta `201 Created`:
 
-- `role` aceita somente valores definidos pelo Relay;
-- número de mensagens, tamanho individual e tamanho total são limitados;
-- o cliente não escolhe livremente modelo, prompt de sistema ou ferramentas;
-- campos desconhecidos podem ser rejeitados durante a fase experimental;
-- conteúdo vazio é inválido.
-
-## Streaming
-
-A resposta deve chegar incrementalmente usando streaming HTTP compatível com
-`fetch`. O formato exato ainda será decidido, mas os eventos lógicos são:
-
-| Evento | Finalidade |
-| --- | --- |
-| `start` | informa IDs e metadados seguros |
-| `delta` | adiciona texto à resposta |
-| `usage` | informa consumo permitido ao cliente |
-| `complete` | encerra normalmente |
-| `error` | encerra com código tratável |
-
-Exemplo conceitual:
-
-```text
-event: start
-data: {"requestId":"..."}
-
-event: delta
-data: {"text":"Olá"}
-
-event: complete
-data: {}
+```json
+{
+  "sessionId": "01J...",
+  "socketToken": "token assinado pelo Relay",
+  "expiresAt": "2026-09-03T18:30:00Z"
+}
 ```
 
-Uma ADR decidirá entre SSE sobre `fetch`, NDJSON ou outro framing antes da
-implementação. WebSocket não é necessário para o primeiro chat, pois a
-requisição do usuário pode ser HTTP e apenas a resposta precisa ser transmitida.
+O endpoint valida token, hostname e action do Turnstile. Tokens ausentes,
+expirados, reutilizados ou inválidos recebem `403`. Limites de criação de sessão
+podem produzir `429`.
+
+O token de socket não contém credenciais externas, mensagem ou informação
+pessoal. A expiração inicial é definida em [configuração](configuracao.md).
 
 ## Erros
 
-Formato proposto:
+Formato aceito:
 
 ```json
 {
@@ -97,11 +72,23 @@ Formato proposto:
 O contrato nunca inclui stack trace, chave, prompt de sistema, URL interna ou
 corpo bruto devolvido pelo provedor.
 
+Códigos HTTP iniciais:
+
+| Status | Uso |
+| --- | --- |
+| `400` | JSON ou campos inválidos |
+| `403` | origem ou desafio Turnstile recusado |
+| `404` | rota inexistente |
+| `413` | corpo acima do limite |
+| `429` | limite temporário atingido |
+| `500` | falha interna normalizada |
+| `503` | aplicação não pronta ou chat desabilitado |
+
 ## CORS
 
 Produção aceita somente as origens configuradas para o site. Métodos, headers e
-tempo de preflight devem ser mínimos. Origem nula e curingas não são permitidos
-quando houver credenciais.
+tempo de preflight são mínimos. Origem nula e curingas são recusados. A política
+HTTP e o `check_origin` do socket derivam da mesma configuração validada.
 
 CORS não impede chamadas feitas fora de um navegador. O endpoint público ainda
 precisa de rate limiting, orçamento e um mecanismo antiabuso.

@@ -1,11 +1,11 @@
-# Decisões pendentes
+# Decisões pendentes e evolutivas
 
-Estas decisões impedem ou alteram significativamente a implementação. Elas não
-devem ser resolvidas por acidente no primeiro commit de código.
+As decisões técnicas necessárias para iniciar foram aceitas em ADRs. Este
+documento separa o que já foi resolvido do que depende de evidência do produto.
 
 ## 1. Linguagem e framework do backend
 
-Status: **Bloqueia a Fase 1**
+Status: **Resolvida pela ADR 0003**
 
 Critérios:
 
@@ -17,12 +17,11 @@ Critérios:
 - familiaridade do mantenedor;
 - custo de build, cold start e memória aceitável.
 
-Opções iniciais a avaliar incluem ASP.NET Core, Node.js/TypeScript e Rust. A ADR
-deve comparar apenas as opções que o mantenedor realmente aceitaria manter.
+Decisão: Elixir 1.20, Erlang/OTP 29 e Phoenix 1.8, sem Ecto no primeiro projeto.
 
 ## 2. Hospedagem do backend
 
-Status: **Bloqueia a prova de deploy**
+Status: **Resolvida para o experimento pela ADR 0005**
 
 Validar com um protótipo:
 
@@ -34,27 +33,32 @@ Validar com um protótipo:
 - logs, health checks e rollback;
 - limites e custo após o free tier.
 
+Decisão atual: Render Free. A validação acima é o critério para mantê-lo, não um
+bloqueio para iniciar o código.
+
 ## 3. Formato do streaming
 
-Status: **Bloqueia a Fase 2**
+Status: **Resolvida pela ADR 0004**
 
-Comparar SSE sobre `fetch`, NDJSON e resposta JSON não transmitida como fallback.
-WebSocket só entra na análise se surgir comunicação bidirecional contínua que
-HTTP não resolva.
+Decisão: Phoenix Channels/WebSocket entre navegador e Relay; SSE apenas entre
+OpenRouter e seu adaptador. O experimento avaliará se o benefício de Channels
+justifica a conexão persistente.
 
 ## 4. Proteção antiabuso
 
-Status: **Bloqueia a exposição pública da IA**
+Status: **Estratégia inicial aceita pela ADR 0008**
 
-CORS não resolve abuso direto. Avaliar desafio anti-bot, sessão anônima curta,
-rate limiting, orçamento diário, login GitHub ou combinação dessas medidas.
+CORS não resolve abuso direto. O experimento usará Turnstile, sessão anônima
+curta, limites locais e teto financeiro. Antes de múltiplas instâncias, decidir
+onde manter contadores distribuídos.
 
-## 5. Provedor de IA
+## 5. Provedor e modelo de IA
 
-Status: **Bloqueia a Fase 3**
+Status: **Provedor resolvido; modelo pendente**
 
-Definir modelo permitido, custo, streaming, limites, retenção de dados, timeout,
-política de erro e processo para trocar a credencial.
+OpenRouter foi aceita pela ADR 0006. Antes da Fase 3, escolher um modelo explícito
+por uma avaliação com perguntas representativas e registrar custo, retenção,
+timeout e processo de rotação da credencial.
 
 ## 6. Papel da integração GitHub
 
@@ -73,7 +77,30 @@ escopo possível e separar leitura de escrita.
 
 ## 7. Persistência de conversas
 
-Status: **Adiada após o MVP**
+Status: **Adiada pela ADR 0007**
 
 Se necessária, definir autenticação, proprietário, retenção, exclusão, backup,
 criptografia e quais dados nunca serão armazenados.
+
+## 8. Função e personalidade do chatbot
+
+Status: **Bloqueia a seleção final do modelo e prompt**
+
+Definir:
+
+- público e domínio de conhecimento;
+- comportamento esperado e recusas;
+- idiomas;
+- necessidade de responder sobre documentos próprios;
+- exemplos reais para avaliação;
+- aviso de que a resposta pode conter erros.
+
+O esqueleto, provedor falso e contrato podem ser implementados antes disso.
+
+## 9. Orçamento do experimento
+
+Status: **Bloqueia a exposição da chave real**
+
+Definir valor máximo por dia ou mês, volume esperado, ação quando o teto for
+atingido e quem recebe alertas. O chat deve falhar fechado quando desabilitado ou
+sem orçamento.
