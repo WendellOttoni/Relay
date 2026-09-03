@@ -72,7 +72,10 @@ if config_env() == :prod do
   errors =
     []
     |> Relay.Config.require_value("PHX_HOST", host)
-    |> Relay.Config.require_secret("SECRET_KEY_BASE", secret_key_base, 64)
+    # Render's generated secret is a Base64-encoded 256-bit value (44 text
+    # bytes including padding). Requiring 32 characters preserves that entropy
+    # floor without rejecting the platform-generated value.
+    |> Relay.Config.require_secret("SECRET_KEY_BASE", secret_key_base, 32)
     |> Relay.Config.require_value("PUBLIC_SITE_URL", public_site_url)
     |> Kernel.++(origin_errors)
     |> Kernel.++(chat_enabled_errors)

@@ -39,9 +39,8 @@ defmodule Relay.Application do
     else
       # The errors contain validation messages and variable names only, never
       # configuration values or secrets.
-      Logger.error("relay_runtime_configuration_invalid",
-        configuration_errors: Relay.Config.errors()
-      )
+      errors = Relay.Config.errors() |> Enum.join("; ")
+      Logger.error("relay_runtime_configuration_invalid errors=#{errors}")
     end
   end
 end
