@@ -10,7 +10,7 @@ ENV MIX_ENV=prod
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends build-essential git \
+    && apt-get install --yes --no-install-recommends build-essential ca-certificates git \
     && rm -rf /var/lib/apt/lists/* \
     && mix local.hex --force \
     && mix local.rebar --force
@@ -29,6 +29,12 @@ RUN mix compile \
 # que gera o release e o runtime do OTP. Ela é maior que Debian puro, mas torna
 # o experimento previsível enquanto a base oficial do Erlang evolui.
 FROM elixir:${ELIXIR_VERSION}-otp-${OTP_VERSION}-slim AS runtime
+
+# The release must trust public certificate authorities for outbound HTTPS
+# requests to Turnstile and OpenRouter.
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV HOME=/app \
     LANG=C.UTF-8 \
