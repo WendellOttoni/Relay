@@ -5,9 +5,10 @@ config :relay, RelayWeb.Endpoint,
   secret_key_base: String.duplicate("test-only-secret-key-base-", 3),
   server: false
 
-config :logger, level: :warning
+config :logger, level: :info
 config :phoenix, :plug_init_mode, :runtime
 
 config :relay,
   turnstile_validator: Relay.Sessions.Turnstile.Fake,
+  chat_enabled: true,
   chat_provider: Relay.Chat.FakeProvider

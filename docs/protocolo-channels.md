@@ -63,6 +63,10 @@ atribuída ao socket.
 
 ## 3. Eventos enviados pelo cliente
 
+O protocolo só está disponível após a criação de sessão. Se o serviço estiver
+com `CHAT_ENABLED=false`, a API de sessão não emite token de socket e o cliente
+não deve tentar conectar ou repetir em laço.
+
 ### `chat:generate`
 
 Inicia uma geração.
@@ -183,9 +187,11 @@ Códigos iniciais:
 | `invalid_request` | mensagem ou histórico inválido |
 | `generation_in_progress` | já existe trabalho na sessão |
 | `rate_limit_exceeded` | limite local ou externo atingido |
+| `service_overloaded` | capacidade simultânea da instância esgotada; tente novamente |
 | `provider_unavailable` | OpenRouter ou modelo indisponível |
 | `provider_timeout` | limite de duração excedido |
 | `session_expired` | sessão anônima não é mais válida |
+| `chat_disabled` | geração foi desabilitada operacionalmente; tente mais tarde |
 | `internal_error` | falha segura e rastreável |
 
 Mensagens públicas não incluem stack trace, resposta bruta do provedor, prompt

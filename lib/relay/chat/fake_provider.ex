@@ -28,6 +28,7 @@ defmodule Relay.Chat.FakeProvider do
   end
 
   defp maybe_delay(0), do: :ok
+
   defp maybe_delay(milliseconds) when is_integer(milliseconds) and milliseconds > 0,
     do: Process.sleep(milliseconds)
 end

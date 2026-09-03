@@ -98,3 +98,29 @@ A suíte padrão não chama a OpenRouter. Ela usa:
 - casos de chunk parcial, timeout, cancelamento, `429`, `5xx` e stream truncado.
 
 Um smoke test real será separado, manual e desabilitado por padrão.
+
+## 7. Operação segura da credencial
+
+`OPENROUTER_API_KEY` é um segredo exclusivo do ambiente de hospedagem. Nunca a
+coloque em `.env` versionado, frontend, log, issue, conversa ou comando salvo.
+Antes de habilitar chat público, configure no painel da OpenRouter um limite
+financeiro baixo e alertas de consumo; os limites locais não substituem esse
+teto.
+
+### Rotação planejada
+
+1. Crie uma chave substituta no painel, com o mesmo teto baixo.
+2. Atualize somente o segredo `OPENROUTER_API_KEY` no provedor de hospedagem e
+   faça novo deploy/restart controlado.
+3. Execute o smoke manual autorizado e acompanhe os contadores agregados e os
+   logs sem conteúdo.
+4. Revogue a chave anterior no painel assim que a nova estiver confirmada.
+5. Registre internamente a data, responsável e motivo, sem registrar o valor da
+   chave.
+
+### Suspeita de exposição
+
+Desabilite imediatamente `CHAT_ENABLED`, revogue a chave no painel da
+OpenRouter, investigue consumo e logs sem copiar a credencial, e crie uma nova
+chave somente depois da análise. Uma chave enviada em chat, issue ou commit deve
+ser tratada como exposta e rotacionada, mesmo que seja apagada em seguida.

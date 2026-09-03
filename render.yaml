@@ -20,3 +20,15 @@ services:
         sync: false
       - key: SECRET_KEY_BASE
         generateValue: true
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        sync: false
+      - key: SYSTEM_PROMPT
+        sync: false
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+      - key: TURNSTILE_EXPECTED_HOSTNAME
+        sync: false
+      - key: TURNSTILE_EXPECTED_ACTION
+        sync: false

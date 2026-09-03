@@ -10,7 +10,11 @@ defmodule Relay.Chat.Provider do
 
   @type event ::
           {:delta, String.t()}
-          | {:usage, %{optional(:input_tokens) => non_neg_integer(), optional(:output_tokens) => non_neg_integer()}}
+          | {:usage,
+             %{
+               optional(:input_tokens) => non_neg_integer(),
+               optional(:output_tokens) => non_neg_integer()
+             }}
 
   @type finish_reason :: :stop | :length
   @type error_reason :: :unavailable | :timeout | :rate_limited | term()

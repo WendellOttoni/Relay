@@ -4,12 +4,11 @@ defmodule Relay.Chat.RateLimiterTest do
   alias Relay.Chat.RateLimiter
 
   setup do
-    name = Module.concat(__MODULE__, String.to_atom("Limiter#{System.unique_integer([:positive])}"))
+    name =
+      Module.concat(__MODULE__, String.to_atom("Limiter#{System.unique_integer([:positive])}"))
 
     limiter =
-      start_supervised!(
-        {RateLimiter, name: name, max_requests: 2, window_ms: 100}
-      )
+      start_supervised!({RateLimiter, name: name, max_requests: 2, window_ms: 100})
 
     %{limiter: limiter}
   end
@@ -36,6 +35,6 @@ defmodule Relay.Chat.RateLimiterTest do
     name = Module.concat(__MODULE__, InvalidLimiter)
 
     assert {:error, :invalid_rate_limit_configuration} =
-             RateLimiter.start_link(name: name, max_requests: 0, window_ms: 100)
+             GenServer.start(RateLimiter, name: name, max_requests: 0, window_ms: 100)
   end
 end

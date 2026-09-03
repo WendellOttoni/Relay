@@ -125,7 +125,11 @@ defmodule Relay.Integrations.OpenRouterTest do
     log =
       capture_log([level: :info, metadata: :all], fn ->
         assert {:error, :rate_limited} =
-                 OpenRouter.stream([%Message{role: :user, content: "olá"}], fn _ -> :ok end, options)
+                 OpenRouter.stream(
+                   [%Message{role: :user, content: "olá"}],
+                   fn _ -> :ok end,
+                   options
+                 )
       end)
 
     assert log =~ "result=rate_limited"

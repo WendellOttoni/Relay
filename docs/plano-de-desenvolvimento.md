@@ -156,8 +156,9 @@ Não registrar:
 As Fases 1 a 3 estão implementadas no backend (código e testes). A Fase 1
 (fundação) só falta a publicação real no Render (F1.9); a Fase 2 (sessão,
 socket e Channel com adaptador falso) está completa; a Fase 3 (OpenRouter) tem
-o adaptador Req/SSE, cancelamento e observabilidade prontos, mas a chave real
-segue bloqueada até a escolha do modelo e a definição de orçamento (ver
+adaptador Req/SSE, cancelamento, observabilidade, Turnstile server-side e
+desligamento de emergência prontos. A chave real segue bloqueada até a avaliação
+do modelo escolhido e a definição de orçamento (ver
 [decisões pendentes](decisoes-pendentes.md), seções 5 e 9).
 
 O próximo passo é a [Fase 4: integração com o GitHub Pages](roadmap.md), que

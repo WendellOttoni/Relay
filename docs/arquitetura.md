@@ -4,8 +4,10 @@
 
 O frontend será um site estático hospedado no GitHub Pages. Ele executa no
 navegador do usuário e pode fazer chamadas HTTPS, mas todo arquivo entregue ao
-navegador é público. O Relay é uma API separada que protege credenciais e aplica
-as regras necessárias antes de acessar serviços externos.
+navegador é público. O Relay é uma API separada, sem interface própria, que
+protege credenciais e aplica as regras necessárias antes de acessar serviços
+externos. Ele é um serviço passivo e pode ficar com o chat desabilitado até que
+o Pages precise consumi-lo.
 
 ## 2. Visão geral
 
@@ -157,6 +159,7 @@ separam responsabilidades sem criar umbrella ou microsserviços.
 | Sessão inválida no socket | conexão recusada |
 | Payload inválido no Channel | reply `invalid_request` |
 | Limite excedido | `429` no HTTP ou `rate_limit_exceeded` no Channel |
+| Capacidade local esgotada | evento `service_overloaded`, sem iniciar chamada ao provedor |
 | Provedor indisponível | evento `provider_unavailable`, sem resposta bruta |
 | Timeout | evento `provider_timeout` e encerramento da tarefa |
 | Browser desconectado | cancelamento do trabalho externo |

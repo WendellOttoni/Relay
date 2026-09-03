@@ -15,6 +15,10 @@ O Relay ainda não possui versão estável e não deve ser utilizado em produç�
 - A chave OpenRouter possui teto financeiro externo e pode ser desabilitada sem
   novo deploy.
 
+Em suspeita de exposição, desabilite `CHAT_ENABLED`, revogue a chave no painel
+da OpenRouter e faça a rotação pelo procedimento em `docs/openrouter.md`. Não
+cole a chave em tickets, chats, logs ou commits.
+
 ## Dados do chat
 
 O MVP não persiste conversas no Relay. O histórico permanece no navegador e é

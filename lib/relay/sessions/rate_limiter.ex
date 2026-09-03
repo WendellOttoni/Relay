@@ -46,7 +46,8 @@ defmodule Relay.Sessions.RateLimiter do
   @impl true
   def handle_call({:allow, network_key}, _from, state) do
     now = System.monotonic_time(:millisecond)
-    {count, window_started_at} = Map.get(state.entries, network_key, {0, now})
+    entries = prune_expired(state.entries, now, state.window_ms)
+    {count, window_started_at} = Map.get(entries, network_key, {0, now})
 
     {count, window_started_at} =
       if now - window_started_at >= state.window_ms,
@@ -54,11 +55,17 @@ defmodule Relay.Sessions.RateLimiter do
         else: {count, window_started_at}
 
     if count < state.limit do
-      entries = Map.put(state.entries, network_key, {count + 1, window_started_at})
+      entries = Map.put(entries, network_key, {count + 1, window_started_at})
       {:reply, :ok, %{state | entries: entries}}
     else
-      {:reply, {:error, :rate_limited}, state}
+      {:reply, {:error, :rate_limited}, %{state | entries: entries}}
     end
+  end
+
+  defp prune_expired(entries, now, window_ms) do
+    Map.filter(entries, fn {_network_key, {_count, window_started_at}} ->
+      now - window_started_at < window_ms
+    end)
   end
 
   defp positive(value, _default) when is_integer(value) and value > 0, do: value

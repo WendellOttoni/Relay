@@ -26,6 +26,7 @@ defmodule Relay.Integrations.OpenRouter do
     started_at = System.monotonic_time()
     {result, usage} = do_stream(messages, emit, opts)
     log_generation(opts, started_at, result, usage)
+    emit_generation_telemetry(started_at, result, usage)
     result
   end
 
@@ -170,4 +171,19 @@ defmodule Relay.Integrations.OpenRouter do
   defp outcome_category({:ok, reason}), do: reason
   defp outcome_category({:error, reason}) when is_atom(reason), do: reason
   defp outcome_category({:error, _reason}), do: :unavailable
+
+  defp emit_generation_telemetry(started_at, result, usage) do
+    duration_ms =
+      System.convert_time_unit(System.monotonic_time() - started_at, :native, :millisecond)
+
+    :telemetry.execute(
+      [:relay, :chat, :generation, :stop],
+      %{
+        duration_ms: duration_ms,
+        input_tokens: (usage && Map.get(usage, :input_tokens)) || 0,
+        output_tokens: (usage && Map.get(usage, :output_tokens)) || 0
+      },
+      %{outcome: outcome_category(result)}
+    )
+  end
 end

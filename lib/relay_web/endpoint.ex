@@ -20,11 +20,9 @@ defmodule RelayWeb.Endpoint do
   plug RelayWeb.Plugs.RequestLogger
   plug RelayWeb.Plugs.CORS
 
-  plug Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json],
-    pass: ["*/*"],
-    json_decoder: Phoenix.json_library(),
-    length: Application.compile_env(:relay, :max_request_bytes, 65_536)
+  # The body limit is runtime configuration. Keeping its initialization in a
+  # small plug avoids baking the development value into a production release.
+  plug RelayWeb.Plugs.Parsers
 
   plug Plug.MethodOverride
   plug Plug.Head

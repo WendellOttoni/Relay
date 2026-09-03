@@ -22,6 +22,14 @@ defmodule RelayWeb.SessionController do
           "O desafio antiabuso é obrigatório."
         )
 
+      {:error, :chat_disabled} ->
+        RelayWeb.ErrorResponse.send(
+          conn,
+          503,
+          "chat_unavailable",
+          "O chat está temporariamente indisponível."
+        )
+
       {:error, :validator_unavailable} ->
         RelayWeb.ErrorResponse.send(
           conn,

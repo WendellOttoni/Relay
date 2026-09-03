@@ -1,7 +1,7 @@
 defmodule RelayWeb.ChatChannel do
   use RelayWeb, :channel
 
-  alias Relay.Chat.{GenerationWorker, Id, RateLimiter, Request}
+  alias Relay.Chat.{GenerationLimiter, GenerationWorker, Id, RateLimiter, Request}
 
   @impl true
   def join("chat:" <> session_id, _payload, socket) do
@@ -20,45 +20,6 @@ defmodule RelayWeb.ChatChannel do
       {:reply, {:error, public_error(:session_expired)}, socket}
     else
       handle_valid_session_generate(payload, socket)
-    end
-  end
-
-  defp handle_valid_session_generate(
-         _payload,
-         %{assigns: %{active_generation: active}} = socket
-       )
-       when not is_nil(active) do
-    {:reply, {:error, public_error(:generation_in_progress)}, socket}
-  end
-
-  defp handle_valid_session_generate(payload, socket) do
-    do_generate(payload, socket)
-  end
-
-  defp do_generate(payload, socket) do
-    with {:ok, request} <- Request.validate(payload, limits()),
-         true <- RateLimiter.allow?(socket.assigns.session_id),
-         ids = %{generation_id: Id.generate(), request_id: Id.generate()},
-         {:ok, worker} <- start_worker(request, ids) do
-      monitor_ref = Process.monitor(worker)
-      active = Map.merge(ids, %{worker: worker, monitor_ref: monitor_ref})
-
-      reply = %{
-        "status" => "accepted",
-        "generationId" => ids.generation_id,
-        "requestId" => ids.request_id
-      }
-
-      {:reply, {:ok, reply}, assign(socket, :active_generation, active)}
-    else
-      {:error, :invalid_request} ->
-        {:reply, {:error, public_error(:invalid_request)}, socket}
-
-      false ->
-        {:reply, {:error, public_error(:rate_limit_exceeded)}, socket}
-
-      {:error, _reason} ->
-        {:reply, {:error, public_error(:internal_error)}, socket}
     end
   end
 
@@ -82,17 +43,78 @@ defmodule RelayWeb.ChatChannel do
   def handle_in(_event, _payload, socket),
     do: {:reply, {:error, public_error(:invalid_request)}, socket}
 
+  defp handle_valid_session_generate(
+         _payload,
+         %{assigns: %{active_generation: active}} = socket
+       )
+       when not is_nil(active) do
+    {:reply, {:error, public_error(:generation_in_progress)}, socket}
+  end
+
+  defp handle_valid_session_generate(payload, socket) do
+    do_generate(payload, socket)
+  end
+
+  defp do_generate(payload, socket) do
+    with :ok <- chat_status(),
+         {:ok, request} <- Request.validate(payload, limits()),
+         true <- RateLimiter.allow?(socket.assigns.session_id),
+         {:ok, lease} <- GenerationLimiter.acquire() do
+      start_generation(request, lease, socket)
+    else
+      :chat_disabled ->
+        {:reply, {:error, public_error(:chat_disabled)}, socket}
+
+      {:error, :invalid_request} ->
+        {:reply, {:error, public_error(:invalid_request)}, socket}
+
+      false ->
+        {:reply, {:error, public_error(:rate_limit_exceeded)}, socket}
+
+      {:error, :overloaded} ->
+        {:reply, {:error, public_error(:service_overloaded)}, socket}
+
+      {:error, _reason} ->
+        {:reply, {:error, public_error(:internal_error)}, socket}
+    end
+  end
+
+  defp start_generation(request, lease, socket) do
+    ids = %{generation_id: Id.generate(), request_id: Id.generate()}
+
+    case start_worker(request, ids) do
+      {:ok, worker} ->
+        monitor_ref = Process.monitor(worker)
+
+        active =
+          Map.merge(ids, %{worker: worker, monitor_ref: monitor_ref, generation_lease: lease})
+
+        reply = %{
+          "status" => "accepted",
+          "generationId" => ids.generation_id,
+          "requestId" => ids.request_id
+        }
+
+        {:reply, {:ok, reply}, assign(socket, :active_generation, active)}
+
+      {:error, _reason} ->
+        GenerationLimiter.release(lease)
+        {:reply, {:error, public_error(:internal_error)}, socket}
+    end
+  end
+
   @impl true
   def handle_info(
         {:chat_generation_event, worker, ids, event},
         %{assigns: %{active_generation: %{worker: worker} = active}} = socket
       ) do
-    unless active[:cancelling] and not terminal?(event) do
+    unless active[:cancelling] == true and not terminal?(event) do
       push_event(socket, event, ids)
     end
 
     if terminal?(event) do
       Process.demonitor(active.monitor_ref, [:flush])
+      release_generation_lease(active)
       {:noreply, assign(socket, :active_generation, nil)}
     else
       {:noreply, socket}
@@ -128,6 +150,8 @@ defmodule RelayWeb.ChatChannel do
       _none -> :ok
     end
 
+    release_generation_lease(socket.assigns[:active_generation])
+
     :ok
   end
 
@@ -152,6 +176,10 @@ defmodule RelayWeb.ChatChannel do
     end
   end
 
+  defp chat_status do
+    if Application.get_env(:relay, :chat_enabled, false), do: :ok, else: :chat_disabled
+  end
+
   defp task_supervisor,
     do: Application.get_env(:relay, :chat_task_supervisor, Relay.ChatTaskSupervisor)
 
@@ -164,7 +192,11 @@ defmodule RelayWeb.ChatChannel do
     do: push(socket, "chat:started", base_payload(ids))
 
   defp push_event(socket, {:delta, sequence, text}, ids) do
-    push(socket, "chat:delta", Map.merge(base_payload(ids), %{"sequence" => sequence, "text" => text}))
+    push(
+      socket,
+      "chat:delta",
+      Map.merge(base_payload(ids), %{"sequence" => sequence, "text" => text})
+    )
   end
 
   defp push_event(socket, {:usage, usage}, ids) do
@@ -177,7 +209,12 @@ defmodule RelayWeb.ChatChannel do
   end
 
   defp push_event(socket, {:completed, reason}, ids),
-    do: push(socket, "chat:completed", Map.put(base_payload(ids), "finishReason", Atom.to_string(reason)))
+    do:
+      push(
+        socket,
+        "chat:completed",
+        Map.put(base_payload(ids), "finishReason", Atom.to_string(reason))
+      )
 
   defp push_event(socket, {:error, code}, ids),
     do: push(socket, "chat:error", Map.put(base_payload(ids), "error", error_body(code)))
@@ -185,6 +222,7 @@ defmodule RelayWeb.ChatChannel do
   defp clear_with_internal_error(socket) do
     active = socket.assigns.active_generation
     push_event(socket, {:error, :internal_error}, active)
+    release_generation_lease(active)
     assign(socket, :active_generation, nil)
   end
 
@@ -215,11 +253,21 @@ defmodule RelayWeb.ChatChannel do
   defp error_body(:provider_timeout),
     do: error("provider_timeout", "A geração excedeu o tempo limite.", true)
 
+  defp error_body(:chat_disabled),
+    do: error("chat_disabled", "O chat está temporariamente indisponível.", true)
+
   defp error_body(:session_expired),
     do: error("session_expired", "A sessão expirou.", false)
 
   defp error_body(:internal_error),
     do: error("internal_error", "Não foi possível concluir a geração.", true)
+
+  defp error_body(:service_overloaded),
+    do:
+      error("service_overloaded", "O serviço está com capacidade temporariamente esgotada.", true)
+
+  defp release_generation_lease(%{generation_lease: lease}), do: GenerationLimiter.release(lease)
+  defp release_generation_lease(_active), do: :ok
 
   defp error(code, message, retryable),
     do: %{"code" => code, "message" => message, "retryable" => retryable}

@@ -12,9 +12,12 @@ config :relay,
   session_rate_limit: 10,
   session_rate_window_seconds: 60,
   turnstile_validator: Relay.Sessions.Turnstile.Disabled,
+  chat_enabled: true,
   chat_provider: Relay.Chat.FakeProvider,
+  chat_max_output_tokens: 1_000,
   chat_task_supervisor: Relay.ChatTaskSupervisor,
   chat_timeout_ms: 90_000,
+  chat_max_concurrent_generations: 8,
   chat_limits: %{
     max_messages: 20,
     max_message_bytes: 8_192,
@@ -32,7 +35,18 @@ config :relay, RelayWeb.Endpoint,
 
 config :logger, :default_formatter,
   format: "timestamp=$time level=$level message=\"$message\" $metadata\n",
-  metadata: [:request_id, :method, :path, :status, :duration_ms]
+  metadata: [
+    :request_id,
+    :generation_id,
+    :model,
+    :result,
+    :input_tokens,
+    :output_tokens,
+    :method,
+    :path,
+    :status,
+    :duration_ms
+  ]
 
 config :phoenix, :json_library, Jason
 

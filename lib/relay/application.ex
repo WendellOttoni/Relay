@@ -6,9 +6,12 @@ defmodule Relay.Application do
   def start(_type, _args) do
     children = [
       RelayWeb.Telemetry,
+      Relay.Chat.GenerationMetrics,
       {Phoenix.PubSub, name: Relay.PubSub},
       {Relay.Sessions.RateLimiter, []},
+      {Relay.Sessions.Turnstile.TokenStore, []},
       {Relay.Chat.RateLimiter, []},
+      {Relay.Chat.GenerationLimiter, []},
       {Task.Supervisor, name: Relay.ChatTaskSupervisor},
       RelayWeb.Endpoint
     ]

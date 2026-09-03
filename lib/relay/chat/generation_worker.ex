@@ -52,7 +52,11 @@ defmodule Relay.Chat.GenerationWorker do
 
     task =
       Task.Supervisor.async_nolink(supervisor, fn ->
-        provider.stream(request.messages, &send(coordinator, {:provider_event, &1}), provider_opts)
+        provider.stream(
+          request.messages,
+          &send(coordinator, {:provider_event, &1}),
+          provider_opts
+        )
       end)
 
     send(channel, {:chat_generation_event, self(), ids, :started})

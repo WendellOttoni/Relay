@@ -5,17 +5,27 @@ defmodule RelayWeb.SessionControllerTest do
     previous_validator = Application.get_env(:relay, :turnstile_validator)
     previous_tokens = Application.get_env(:relay, :turnstile_fake_tokens)
     previous_limiter = Application.get_env(:relay, :session_rate_limiter)
+    previous_token_store = Application.get_env(:relay, :turnstile_token_store)
+    previous_chat_enabled = Application.get_env(:relay, :chat_enabled)
 
     start_supervised!(
       {Relay.Sessions.RateLimiter, name: Relay.SessionControllerTestLimiter, limit: 100}
     )
 
+    start_supervised!(
+      {Relay.Sessions.Turnstile.TokenStore, name: Relay.SessionControllerTestTokenStore}
+    )
+
     Application.put_env(:relay, :session_rate_limiter, Relay.SessionControllerTestLimiter)
+    Application.put_env(:relay, :turnstile_token_store, Relay.SessionControllerTestTokenStore)
+    Application.put_env(:relay, :chat_enabled, true)
 
     on_exit(fn ->
       restore_env(:turnstile_validator, previous_validator)
       restore_env(:turnstile_fake_tokens, previous_tokens)
       restore_env(:session_rate_limiter, previous_limiter)
+      restore_env(:turnstile_token_store, previous_token_store)
+      restore_env(:chat_enabled, previous_chat_enabled)
     end)
 
     :ok
@@ -51,6 +61,16 @@ defmodule RelayWeb.SessionControllerTest do
     assert %{"error" => %{"code" => "sessions_unavailable"}} = json_response(conn, 503)
   end
 
+  test "does not issue sessions while the emergency chat switch is off", %{conn: conn} do
+    Application.put_env(:relay, :chat_enabled, false)
+    Application.put_env(:relay, :turnstile_validator, Relay.Sessions.Turnstile.Fake)
+    Application.put_env(:relay, :turnstile_fake_tokens, ["accepted-token"])
+
+    conn = RelayWeb.SessionController.create(conn, %{"turnstileToken" => "accepted-token"})
+
+    assert %{"error" => %{"code" => "chat_unavailable"}} = json_response(conn, 503)
+  end
+
   test "does not expose why a configured validator refused a challenge", %{conn: conn} do
     Application.put_env(:relay, :turnstile_validator, Relay.Sessions.Turnstile.Fake)
     Application.put_env(:relay, :turnstile_fake_tokens, [])
@@ -61,8 +81,14 @@ defmodule RelayWeb.SessionControllerTest do
   end
 
   test "returns too many requests after the per-network limit", %{conn: conn} do
-    start_supervised!({Relay.Sessions.RateLimiter, name: Relay.StrictControllerLimiter, limit: 1})
-    Application.put_env(:relay, :session_rate_limiter, Relay.StrictControllerLimiter)
+    limiter_name = unique_limiter_name("StrictControllerLimiter")
+
+    start_supervised!(%{
+      id: limiter_name,
+      start: {Relay.Sessions.RateLimiter, :start_link, [[name: limiter_name, limit: 1]]}
+    })
+
+    Application.put_env(:relay, :session_rate_limiter, limiter_name)
     Application.put_env(:relay, :turnstile_validator, Relay.Sessions.Turnstile.Fake)
     Application.put_env(:relay, :turnstile_fake_tokens, ["accepted-token"])
 
@@ -75,4 +101,8 @@ defmodule RelayWeb.SessionControllerTest do
 
   defp restore_env(key, nil), do: Application.delete_env(:relay, key)
   defp restore_env(key, value), do: Application.put_env(:relay, key, value)
+
+  defp unique_limiter_name(prefix) do
+    Module.concat(__MODULE__, String.to_atom("#{prefix}#{System.unique_integer([:positive])}"))
+  end
 end

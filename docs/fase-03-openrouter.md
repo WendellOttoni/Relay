@@ -1,13 +1,13 @@
 # Fase 3 — Integração com a OpenRouter
 
 Status: **Parcialmente implementada.** F3.2 (cliente Req/SSE), F3.3
-(cancelamento e falhas) e F3.5 (observabilidade sem conteúdo) estão
-implementados e testados. F3.1 (seleção de modelo), F3.4 (proteção real:
-Turnstile, teto financeiro, rotação de chave) e F3.6 (smoke test com
-orçamento real) permanecem bloqueados por decisões externas ainda pendentes
-do usuário — ver `docs/decisoes-pendentes.md`, seções 5 (modelo da
-OpenRouter) e 9 (orçamento do experimento). A fase não pode ser encerrada
-enquanto essas decisões não forem tomadas.
+(cancelamento e falhas), F3.5 (observabilidade sem conteúdo, contadores locais
+e alerta por falhas repetidas) e a parte técnica
+de F3.4 (Turnstile server-side, sessão de uso único e chave de emergência)
+estão implementadas. O modelo inicial foi escolhido, mas a sua avaliação
+operacional, o teto financeiro, a rotação da chave e o smoke test com orçamento
+real continuam pendentes. A fase não pode ser encerrada enquanto essas decisões
+operacionais não forem tomadas.
 
 ## 1. Objetivo
 
@@ -67,6 +67,14 @@ lentos sem acessar a internet.
 - testar redaction com segredo e texto sentinela;
 - criar alertas ou inspeção simples para limites e falhas repetidas.
 
+O Relay emite o evento Telemetry `[:relay, :chat, :generation, :stop]` com
+somente `duration_ms`, `input_tokens` e `output_tokens`; o único metadado é o
+resultado categorizado. `Relay.Chat.GenerationMetrics.snapshot/0` expõe
+contadores locais agregados para inspeção. Eles são reiniciados junto com a
+instância e não servem como registro de cobrança. Cinco falhas de provedor em
+cinco minutos (configuráveis por aplicação) geram um aviso estruturado sem
+identificadores, conteúdo ou credenciais.
+
 ### F3.6 — Executar smoke test controlado
 
 - habilitar teste manual separado da suíte padrão;
@@ -74,10 +82,17 @@ lentos sem acessar a internet.
 - confirmar deltas, cancelamento, usage e logs;
 - desabilitar chat automaticamente se configuração crítica falhar.
 
+O comando manual é `RELAY_RUN_OPENROUTER_SMOKE=true mix relay.smoke_openrouter`.
+Ele permanece fora de `mix test` e `mix check`, exige que o runtime já tenha
+habilitado o adaptador OpenRouter, faz uma única pergunta sintética curta e só
+imprime resultado, quantidade de deltas e presença de usage. Antes de rodá-lo,
+defina e aprove o teto financeiro; para validar cancelamento, use o cliente de
+staging e envie `chat:cancel` logo depois de `chat:started`, verificando o
+evento terminal `cancelled` e a interrupção do stream no log seguro.
+
 ## 4. Critério de saída
 
 O Pages conversa com o modelo escolhido via OpenRouter sem mudança no protocolo.
 Chave, prompt e conteúdo não aparecem no cliente ou nos logs; cancelamento
 interrompe a chamada; limites técnicos e financeiros estão ativos; a suíte padrão
 continua totalmente offline.
-

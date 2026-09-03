@@ -27,6 +27,27 @@ defmodule RelayWeb.CORSTest do
     assert conn.status == 204
   end
 
+  test "rejects a preflight that asks for a method or header outside the API contract", %{
+    conn: conn
+  } do
+    conn =
+      conn
+      |> put_req_header("origin", "https://wendellottoni.github.io")
+      |> put_req_header("access-control-request-method", "DELETE")
+      |> options("/api/v1/sessions")
+
+    assert %{"error" => %{"code" => "preflight_rejected"}} = json_response(conn, 403)
+
+    conn =
+      build_conn()
+      |> put_req_header("origin", "https://wendellottoni.github.io")
+      |> put_req_header("access-control-request-method", "POST")
+      |> put_req_header("access-control-request-headers", "content-type, authorization")
+      |> options("/api/v1/sessions")
+
+    assert %{"error" => %{"code" => "preflight_rejected"}} = json_response(conn, 403)
+  end
+
   test "does not authorize an unexpected origin", %{conn: conn} do
     conn =
       conn

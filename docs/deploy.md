@@ -15,6 +15,11 @@ Repositório do frontend       Repositório Relay
 O GitHub Pages não executa o Relay. Ele apenas entrega o frontend, que recebe a
 URL pública do backend durante o build.
 
+O Relay também não hospeda uma interface ou página de chat. Ele fica como
+serviço passivo: pode permanecer com o chat desligado e só processa solicitações
+quando o Pages (ou futuro consumidor explicitamente autorizado) cria sessão e
+abre o Channel.
+
 ## 2. Ambiente experimental escolhido
 
 O primeiro deploy usa um Web Service gratuito do Render porque oferece:
@@ -114,6 +119,10 @@ para contornar a política do plano gratuito.
 - rollback foi ensaiado;
 - custo e limites do provedor possuem alertas;
 - política de privacidade explica o envio de mensagens à IA.
+
+Antes de tornar a URL do serviço utilizável pelo Pages, siga também o
+[runbook operacional](operacao.md). Uma URL publicada não autoriza habilitar o
+chat: o estado inicial previsto no `render.yaml` é `CHAT_ENABLED=false`.
 
 ## 9. Evolução
 

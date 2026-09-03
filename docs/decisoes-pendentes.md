@@ -54,11 +54,13 @@ onde manter contadores distribuídos.
 
 ## 5. Provedor e modelo de IA
 
-Status: **Provedor resolvido; modelo pendente**
+Status: **Provedor e modelo inicial resolvidos; validação operacional pendente**
 
-OpenRouter foi aceita pela ADR 0006. Antes da Fase 3, escolher um modelo explícito
-por uma avaliação com perguntas representativas e registrar custo, retenção,
-timeout e processo de rotação da credencial.
+OpenRouter foi aceita pela ADR 0006. O experimento inicial usará o identificador
+configurado em `OPENROUTER_MODEL`; a escolha atual é `minimax/minimax-m3:free`.
+Antes de expor a chave, ainda é necessário validar o modelo com perguntas
+representativas e registrar custo, retenção, timeout e processo de rotação da
+credencial.
 
 ## 6. Papel da integração GitHub
 

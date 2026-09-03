@@ -18,9 +18,11 @@ defmodule Relay.Sessions do
 
   @spec create_session(map()) :: {:ok, session()} | {:error, atom()}
   def create_session(attrs) when is_map(attrs) do
-    with {:ok, challenge_token} <- fetch_challenge_token(attrs),
-         :ok <- rate_limiter().allow?(network_key(attrs)),
-         :ok <- validator().verify(challenge_token, validation_context(attrs)) do
+    with :ok <- ensure_chat_enabled(),
+         {:ok, challenge_token} <- fetch_challenge_token(attrs),
+         :ok <- Relay.Sessions.RateLimiter.allow?(network_key(attrs), rate_limiter()),
+         :ok <- validator().verify(challenge_token, validation_context(attrs)),
+         :ok <- Relay.Sessions.Turnstile.TokenStore.consume(challenge_token, token_store()) do
       issue_session()
     end
   end
@@ -28,15 +30,9 @@ defmodule Relay.Sessions do
   @spec verify_socket_token(String.t()) ::
           {:ok, %{session_id: binary(), expires_at: DateTime.t()}} | {:error, atom()}
   def verify_socket_token(token) when is_binary(token) do
-    with {:ok, payload} <-
-           Phoenix.Token.verify(RelayWeb.Endpoint, @token_salt, token, max_age: ttl_seconds()),
-         {:ok, session_id, expires_at} <- decode_payload(payload),
-         :ok <- ensure_not_expired(expires_at) do
-      {:ok, %{session_id: session_id, expires_at: expires_at}}
-    else
-      {:error, :expired} -> {:error, :expired}
-      {:error, reason} when is_atom(reason) -> {:error, reason}
-      _other -> {:error, :invalid}
+    case Phoenix.Token.verify(RelayWeb.Endpoint, @token_salt, token, max_age: ttl_seconds()) do
+      {:ok, payload} -> verify_socket_payload(payload)
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -63,6 +59,12 @@ defmodule Relay.Sessions do
     end
   end
 
+  defp ensure_chat_enabled do
+    if Application.get_env(:relay, :chat_enabled, false),
+      do: :ok,
+      else: {:error, :chat_disabled}
+  end
+
   defp validation_context(attrs) do
     %{
       remote_ip: Map.get(attrs, :remote_ip),
@@ -84,6 +86,15 @@ defmodule Relay.Sessions do
 
   defp decode_payload(_payload), do: {:error, :invalid}
 
+  defp verify_socket_payload(payload) do
+    with {:ok, session_id, expires_at} <- decode_payload(payload),
+         :ok <- ensure_not_expired(expires_at) do
+      {:ok, %{session_id: session_id, expires_at: expires_at}}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   defp ensure_not_expired(expires_at) do
     if DateTime.compare(expires_at, DateTime.utc_now()) == :gt,
       do: :ok,
@@ -96,6 +107,10 @@ defmodule Relay.Sessions do
 
   defp rate_limiter do
     Application.get_env(:relay, :session_rate_limiter, Relay.Sessions.RateLimiter)
+  end
+
+  defp token_store do
+    Application.get_env(:relay, :turnstile_token_store, Relay.Sessions.Turnstile.TokenStore)
   end
 
   defp ttl_seconds do

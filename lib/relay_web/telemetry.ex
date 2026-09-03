@@ -8,7 +8,7 @@ defmodule RelayWeb.Telemetry do
   @impl true
   def init(_arg) do
     children = [
-      {Telemetry.Poller, measurements: periodic_measurements(), period: 10_000}
+      {:telemetry_poller, measurements: periodic_measurements(), period: 10_000}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
@@ -17,7 +17,14 @@ defmodule RelayWeb.Telemetry do
   def metrics do
     [
       summary("phoenix.endpoint.stop.duration", unit: {:native, :millisecond}),
-      summary("phoenix.router_dispatch.stop.duration", tags: [:route], unit: {:native, :millisecond}),
+      summary("phoenix.router_dispatch.stop.duration",
+        tags: [:route],
+        unit: {:native, :millisecond}
+      ),
+      counter("relay.chat.generation.stop.count", tags: [:outcome]),
+      summary("relay.chat.generation.stop.duration_ms"),
+      sum("relay.chat.generation.stop.input_tokens"),
+      sum("relay.chat.generation.stop.output_tokens"),
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),

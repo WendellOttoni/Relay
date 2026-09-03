@@ -22,7 +22,11 @@ Indica que o processo está vivo. Não acessa o provedor externo.
 
 ### `GET /health/ready`
 
-Indica que configuração e dependências obrigatórias permitem receber tráfego.
+Indica que a configuração base permite o processo receber tráfego. Não é uma
+garantia de que o chat está habilitado nem de que a OpenRouter está acessível:
+health checks não chamam provedores externos. Com `CHAT_ENABLED=false`, este
+endpoint pode responder pronto enquanto criação de sessão e geração permanecem
+indisponíveis por desenho.
 
 ## Sessão anônima
 
@@ -54,6 +58,10 @@ podem produzir `429`.
 
 O token de socket não contém credenciais externas, mensagem ou informação
 pessoal. A expiração inicial é definida em [configuração](configuracao.md).
+
+Quando o serviço estiver em modo desabilitado, a criação de sessão responde
+`503 sessions_unavailable`. Um cliente consumidor deve tratar isso como estado
+temporário, não tentar contornar a proteção antiabuso e não abrir o socket.
 
 ## Erros
 

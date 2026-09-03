@@ -1,7 +1,8 @@
 # Como contribuir
 
-O Relay está iniciando a Fase 1. Antes de implementar algo, confirme que o item
-faz parte da fase atual e possui critérios de aceite documentados.
+O backend já implementa as Fases 1 e 2 e parte da Fase 3. Antes de implementar
+algo, confirme que o item faz parte da fase atual e possui critérios de aceite
+documentados.
 
 ## Processo
 

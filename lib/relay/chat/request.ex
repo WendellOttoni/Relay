@@ -1,5 +1,5 @@
 defmodule Relay.Chat.Request do
-  @moduledoc """Validates and normalizes the public `chat:generate` payload."""
+  @moduledoc "Validates and normalizes the public `chat:generate` payload."
 
   alias Relay.Chat.Message
 

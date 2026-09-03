@@ -1,6 +1,6 @@
 defmodule RelayWeb.ChatChannelTest do
   use ExUnit.Case, async: false
-  use Phoenix.ChannelTest
+  import Phoenix.ChannelTest
 
   @endpoint RelayWeb.Endpoint
 
@@ -8,12 +8,18 @@ defmodule RelayWeb.ChatChannelTest do
     supervisor = start_supervised!(Task.Supervisor)
     old_provider = Application.get_env(:relay, :chat_provider)
     old_supervisor = Application.get_env(:relay, :chat_task_supervisor)
+    old_chat_enabled = Application.get_env(:relay, :chat_enabled)
+
+    Relay.Chat.GenerationLimiter.reset()
 
     Application.put_env(:relay, :chat_task_supervisor, supervisor)
+    Application.put_env(:relay, :chat_enabled, true)
 
     on_exit(fn ->
       restore_env(:chat_provider, old_provider)
       restore_env(:chat_task_supervisor, old_supervisor)
+      restore_env(:chat_enabled, old_chat_enabled)
+      Relay.Chat.GenerationLimiter.reset()
     end)
 
     %{supervisor: supervisor}
@@ -91,6 +97,30 @@ defmodule RelayWeb.ChatChannelTest do
     refute_push "chat:delta", _payload, 20
   end
 
+  test "rejects generations safely while chat is disabled" do
+    Application.put_env(:relay, :chat_enabled, false)
+    {:ok, _, socket} = join_session("session")
+
+    ref = push(socket, "chat:generate", valid_payload())
+
+    assert_reply ref, :error, %{
+      "error" => %{"code" => "chat_disabled", "retryable" => true}
+    }
+  end
+
+  test "fails closed when all generation capacity is occupied" do
+    leases = acquire_all_generation_leases()
+    {:ok, _, socket} = join_session("session")
+
+    ref = push(socket, "chat:generate", valid_payload())
+
+    assert_reply ref, :error, %{
+      "error" => %{"code" => "service_overloaded", "retryable" => true}
+    }
+
+    Enum.each(leases, &Relay.Chat.GenerationLimiter.release/1)
+  end
+
   defp join_session(session_id) do
     RelayWeb.UserSocket
     |> socket(nil, %{session_id: session_id})
@@ -102,4 +132,11 @@ defmodule RelayWeb.ChatChannelTest do
 
   defp restore_env(key, nil), do: Application.delete_env(:relay, key)
   defp restore_env(key, value), do: Application.put_env(:relay, key, value)
+
+  defp acquire_all_generation_leases(leases \\ []) do
+    case Relay.Chat.GenerationLimiter.acquire() do
+      {:ok, lease} -> acquire_all_generation_leases([lease | leases])
+      {:error, :overloaded} -> leases
+    end
+  end
 end

@@ -20,6 +20,49 @@ defmodule Relay.Config do
     end
   end
 
+  @spec parse_boolean(String.t() | nil, String.t(), boolean()) :: {boolean(), [String.t()]}
+  def parse_boolean(nil, _name, default), do: {default, []}
+  def parse_boolean("true", _name, _default), do: {true, []}
+  def parse_boolean("false", _name, _default), do: {false, []}
+  def parse_boolean(_value, name, _default), do: {false, ["#{name} must be true or false"]}
+
+  @spec parse_positive_integer(String.t() | nil, String.t(), pos_integer()) ::
+          {pos_integer(), [String.t()]}
+  def parse_positive_integer(nil, _name, default), do: {default, []}
+
+  def parse_positive_integer(value, name, _default) when is_binary(value) do
+    case Integer.parse(value) do
+      {integer, ""} when integer > 0 -> {integer, []}
+      _ -> {1, ["#{name} must be a positive integer"]}
+    end
+  end
+
+  def parse_positive_integer(_value, name, _default),
+    do: {1, ["#{name} must be a positive integer"]}
+
+  @spec parse_port(String.t() | nil, pos_integer()) :: {pos_integer(), [String.t()]}
+  def parse_port(nil, default), do: {default, []}
+
+  def parse_port(value, default) when is_binary(value) do
+    case Integer.parse(value) do
+      {port, ""} when port in 1..65_535 -> {port, []}
+      _ -> {default, ["PORT must be an integer between 1 and 65535"]}
+    end
+  end
+
+  def parse_port(_value, default),
+    do: {default, ["PORT must be an integer between 1 and 65535"]}
+
+  @spec parse_log_level(String.t() | nil, atom()) :: {atom(), [String.t()]}
+  def parse_log_level(nil, default), do: {default, []}
+
+  def parse_log_level(value, _default) when value in ["debug", "info", "warning", "error"] do
+    {String.to_existing_atom(value), []}
+  end
+
+  def parse_log_level(_value, default),
+    do: {default, ["LOG_LEVEL must be debug, info, warning, or error"]}
+
   @spec parse_origins(String.t() | nil, atom()) :: {[String.t()], [String.t()]}
   def parse_origins(nil, _environment), do: {[], ["ALLOWED_ORIGINS is required"]}
 
@@ -58,6 +101,12 @@ defmodule Relay.Config do
     cond do
       uri.scheme not in ["http", "https"] or is_nil(uri.host) ->
         ["ALLOWED_ORIGINS contains an invalid origin"]
+
+      not is_nil(uri.userinfo) ->
+        ["ALLOWED_ORIGINS entries must not contain user credentials"]
+
+      is_integer(uri.port) and uri.port not in 1..65_535 ->
+        ["ALLOWED_ORIGINS contains an invalid port"]
 
       uri.path not in [nil, ""] or not is_nil(uri.query) or not is_nil(uri.fragment) ->
         ["ALLOWED_ORIGINS entries must not contain paths, queries, or fragments"]

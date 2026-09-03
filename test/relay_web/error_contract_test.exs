@@ -16,7 +16,8 @@ defmodule RelayWeb.ErrorContractTest do
   end
 
   test "propagates a valid request ID", %{conn: conn} do
-    conn = conn |> put_req_header("x-request-id", "relay-test-request-id") |> get(~p"/health/live")
+    conn =
+      conn |> put_req_header("x-request-id", "relay-test-request-id") |> get(~p"/health/live")
 
     assert get_resp_header(conn, "x-request-id") == ["relay-test-request-id"]
   end

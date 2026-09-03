@@ -15,9 +15,12 @@ para o Relay.
 8. [Integração OpenRouter](openrouter.md) — fronteira do primeiro provedor.
 9. [Configuração](configuracao.md) — ambientes, secrets e limites.
 10. [Deploy](deploy.md) — GitHub Pages e Render Free.
-11. [Decisões pendentes](decisoes-pendentes.md) — escolhas que dependem do produto.
-12. [Roadmap](roadmap.md) — evolução do MVP até uma versão estável.
-13. [ADRs](adr/README.md) — decisões aceitas e suas justificativas.
+11. [Desenvolvimento local](desenvolvimento-local.md) — execução e diagnóstico sem segredos.
+12. [Operação](operacao.md) — ativação, incidentes, orçamento e rollback.
+13. [Privacidade](privacidade.md) — tratamento mínimo de dados no MVP.
+14. [Decisões pendentes](decisoes-pendentes.md) — escolhas que dependem do produto.
+15. [Roadmap](roadmap.md) — evolução do MVP até uma versão estável.
+16. [ADRs](adr/README.md) — decisões aceitas e suas justificativas.
 
 ## Responsabilidade dos documentos
 
@@ -31,6 +34,8 @@ para o Relay.
 | OpenRouter | Como o provedor fica isolado? |
 | Configuração | Quais variáveis e limites existem? |
 | Deploy | Onde cada parte executa? |
+| Operação | Como ativar, monitorar, responder e reverter? |
+| Privacidade | Quais dados transitam e quais não são guardados? |
 | Decisões pendentes | O que ainda não pode ser presumido? |
 | ADR | Por que uma escolha importante foi feita? |
 

@@ -9,8 +9,11 @@ controle de uso ou acesso a APIs externas são executadas pelo Relay, hospedado
 separadamente.
 
 > [!IMPORTANT]
-> A arquitetura foi decidida e o projeto está pronto para iniciar a implementação.
-> Ainda não existe uma API publicada.
+> O Relay não oferece interface de usuário. Ele é um serviço de backend que
+> permanece inativo por padrão (`CHAT_ENABLED=false`) e só atende gerações
+> quando um consumidor autorizado — inicialmente o GitHub Pages — o utiliza.
+> A fundação, o protocolo e o adaptador OpenRouter existem no código; não há
+> deploy público validado nem consumidor frontend integrado.
 
 ## Por que existe um backend?
 
@@ -138,7 +141,17 @@ Antes de iniciar o código:
 - [x] OpenRouter, protocolo e hospedagem experimental definidos.
 - [x] Persistência adiada conscientemente.
 - [x] Contratos HTTP e WebSocket documentados.
-- [ ] Implementação iniciada.
+- [x] Fundação HTTP, configuração, segurança de origem e CI implementadas.
+- [x] Sessão anônima, socket, Channel e provedor falso implementados.
+- [x] Adaptador Req/SSE da OpenRouter implementado.
+- [x] Serviço seguro por padrão: chat desabilitado até configuração e decisão operacional explícitas.
+- [ ] Deploy público no Render validado.
+- [ ] Integração com o frontend do GitHub Pages.
+- [ ] Aprovar orçamento/teto financeiro e executar o smoke manual da OpenRouter.
+
+Consulte o [runbook operacional](docs/operacao.md) antes de habilitar o chat e
+a [nota mínima de privacidade](docs/privacidade.md) antes de publicar um
+consumidor.
 
 ## Licença
 
