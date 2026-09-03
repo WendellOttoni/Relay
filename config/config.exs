@@ -45,7 +45,8 @@ config :logger, :default_formatter,
     :method,
     :path,
     :status,
-    :duration_ms
+    :duration_ms,
+    :configuration_errors
   ]
 
 config :phoenix, :json_library, Jason

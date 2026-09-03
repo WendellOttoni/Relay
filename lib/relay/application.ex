@@ -1,6 +1,7 @@
 defmodule Relay.Application do
   @moduledoc false
   use Application
+  require Logger
 
   @impl true
   def start(_type, _args) do
@@ -16,12 +17,31 @@ defmodule Relay.Application do
       RelayWeb.Endpoint
     ]
 
-    Supervisor.start_link(children, strategy: :one_for_one, name: Relay.Supervisor)
+    case Supervisor.start_link(children, strategy: :one_for_one, name: Relay.Supervisor) do
+      {:ok, _pid} = result ->
+        log_runtime_readiness()
+        result
+
+      error ->
+        error
+    end
   end
 
   @impl true
   def config_change(changed, _new, removed) do
     RelayWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp log_runtime_readiness do
+    if Relay.Config.ready?() do
+      Logger.info("relay_runtime_configuration_ready")
+    else
+      # The errors contain validation messages and variable names only, never
+      # configuration values or secrets.
+      Logger.error("relay_runtime_configuration_invalid",
+        configuration_errors: Relay.Config.errors()
+      )
+    end
   end
 end
