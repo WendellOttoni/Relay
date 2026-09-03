@@ -11,6 +11,15 @@ if config_env() == :prod do
   {chat_enabled, chat_enabled_errors} =
     Relay.Config.parse_boolean(System.get_env("CHAT_ENABLED"), "CHAT_ENABLED", false)
 
+  # This is deliberately opt-in and intended only for a short private demo.
+  # A public deployment must keep this false and require Turnstile.
+  {chat_allow_unprotected_demo, demo_mode_errors} =
+    Relay.Config.parse_boolean(
+      System.get_env("CHAT_ALLOW_UNPROTECTED_DEMO"),
+      "CHAT_ALLOW_UNPROTECTED_DEMO",
+      false
+    )
+
   {chat_max_output_tokens, output_token_errors} =
     Relay.Config.parse_positive_integer(
       System.get_env("CHAT_MAX_OUTPUT_TOKENS"),
@@ -79,6 +88,7 @@ if config_env() == :prod do
     |> Relay.Config.require_value("PUBLIC_SITE_URL", public_site_url)
     |> Kernel.++(origin_errors)
     |> Kernel.++(chat_enabled_errors)
+    |> Kernel.++(demo_mode_errors)
     |> Kernel.++(port_errors)
     |> Kernel.++(log_level_errors)
     |> Kernel.++(output_token_errors)
@@ -100,7 +110,7 @@ if config_env() == :prod do
     end
 
   turnstile_errors =
-    if chat_enabled do
+    if chat_enabled and not chat_allow_unprotected_demo do
       []
       |> Relay.Config.require_secret("TURNSTILE_SECRET_KEY", turnstile_secret_key, 1)
       |> Relay.Config.require_value("TURNSTILE_EXPECTED_HOSTNAME", turnstile_expected_hostname)
@@ -134,6 +144,7 @@ if config_env() == :prod do
     allowed_origins: allowed_origins,
     public_site_url: public_site_url,
     chat_enabled: provider_configured?,
+    chat_allow_unprotected_demo: provider_configured? and chat_allow_unprotected_demo,
     chat_provider: chat_provider,
     chat_max_output_tokens: chat_max_output_tokens,
     chat_timeout_ms: chat_timeout_ms,
@@ -146,7 +157,7 @@ if config_env() == :prod do
       max_request_bytes: chat_max_request_bytes
     },
     turnstile_validator:
-      if(provider_configured?,
+      if(provider_configured? and not chat_allow_unprotected_demo,
         do: Relay.Sessions.Turnstile.Cloudflare,
         else: Relay.Sessions.Turnstile.Disabled
       ),

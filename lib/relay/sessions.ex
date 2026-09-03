@@ -19,10 +19,8 @@ defmodule Relay.Sessions do
   @spec create_session(map()) :: {:ok, session()} | {:error, atom()}
   def create_session(attrs) when is_map(attrs) do
     with :ok <- ensure_chat_enabled(),
-         {:ok, challenge_token} <- fetch_challenge_token(attrs),
          :ok <- Relay.Sessions.RateLimiter.allow?(network_key(attrs), rate_limiter()),
-         :ok <- validator().verify(challenge_token, validation_context(attrs)),
-         :ok <- Relay.Sessions.Turnstile.TokenStore.consume(challenge_token, token_store()) do
+         :ok <- validate_challenge(attrs) do
       issue_session()
     end
   end
@@ -56,6 +54,18 @@ defmodule Relay.Sessions do
     case Map.get(attrs, :turnstile_token) || Map.get(attrs, "turnstileToken") do
       token when is_binary(token) and byte_size(token) > 0 -> {:ok, token}
       _other -> {:error, :missing_challenge}
+    end
+  end
+
+  defp validate_challenge(attrs) do
+    if Application.get_env(:relay, :chat_allow_unprotected_demo, false) do
+      :ok
+    else
+      with {:ok, challenge_token} <- fetch_challenge_token(attrs),
+           :ok <- validator().verify(challenge_token, validation_context(attrs)),
+           :ok <- Relay.Sessions.Turnstile.TokenStore.consume(challenge_token, token_store()) do
+        :ok
+      end
     end
   end
 

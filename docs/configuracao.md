@@ -21,6 +21,7 @@ somente valores locais seguros e exemplos sem credenciais.
 | `TURNSTILE_EXPECTED_HOSTNAME` | chat público | hostname autorizado |
 | `TURNSTILE_EXPECTED_ACTION` | chat público | action esperada |
 | `CHAT_ENABLED` | não | chave de emergência; padrão `false` em produção nova |
+| `CHAT_ALLOW_UNPROTECTED_DEMO` | não | **somente demonstração privada**; desativa Turnstile temporariamente |
 | `CHAT_SESSION_TTL_SECONDS` | não | duração da sessão anônima |
 | `CHAT_MAX_MESSAGES` | não | quantidade máxima no histórico |
 | `CHAT_MAX_MESSAGE_BYTES` | não | tamanho máximo por mensagem |
@@ -52,7 +53,7 @@ feitas por configuração e acompanhadas por testes de fronteira.
   saudável;
 - `SECRET_KEY_BASE` e secrets nunca aparecem na mensagem de erro;
 - produção rejeita origem curinga, `localhost` e esquemas diferentes de HTTPS;
-- `CHAT_ENABLED=true` exige todas as configurações do Turnstile e OpenRouter;
+- `CHAT_ENABLED=true` exige OpenRouter e, exceto se `CHAT_ALLOW_UNPROTECTED_DEMO=true`, todas as configurações do Turnstile;
 - a aplicação inicia com chat desabilitado para permitir diagnóstico seguro,
   podendo responder saudável em `/health/ready`, mas não atende sessão nem
   geração enquanto o chat estiver desabilitado;
