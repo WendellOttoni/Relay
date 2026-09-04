@@ -63,6 +63,32 @@ Quando o serviço estiver em modo desabilitado, a criação de sessão responde
 `503 sessions_unavailable`. Um cliente consumidor deve tratar isso como estado
 temporário, não tentar contornar a proteção antiabuso e não abrir o socket.
 
+## Oportunidades comerciais
+
+### `POST /api/v1/leads`
+
+Entrega uma oportunidade revisada pelo visitante. Exige o token curto da sessão
+no header `Authorization: Bearer <socketToken>` e consentimento explícito.
+
+```json
+{
+  "name": "Ana",
+  "email": "ana@example.com",
+  "company": "Empresa opcional",
+  "projectType": "Modernização de sistema",
+  "timeframe": "3 meses",
+  "budget": "A definir",
+  "summary": "Resumo revisado pelo visitante",
+  "proposal": "Proposta preliminar opcional",
+  "consent": true
+}
+```
+
+Uma entrega aceita responde `201` com `{ "status": "delivered" }`. O Relay
+valida tamanho, formato, sessão e limite de envios antes de chamar o Formspree.
+Quando `LEAD_DELIVERY_ENABLED=false` ou o provedor não está configurado, responde
+`503` sem registrar nem fingir que a mensagem foi entregue.
+
 ## Erros
 
 Formato aceito:
@@ -85,6 +111,7 @@ Códigos HTTP iniciais:
 | Status | Uso |
 | --- | --- |
 | `400` | JSON ou campos inválidos |
+| `401` | sessão ausente, inválida ou expirada |
 | `403` | origem ou desafio Turnstile recusado |
 | `404` | rota inexistente |
 | `413` | corpo acima do limite |

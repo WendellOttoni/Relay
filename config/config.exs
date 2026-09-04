@@ -25,6 +25,9 @@ config :relay,
     max_request_bytes: 65_536
   },
   chat_rate_limit: %{max_requests: 10, window_ms: 60_000},
+  lead_delivery: Relay.Leads.DisabledDelivery,
+  lead_rate_limit: 2,
+  lead_rate_window_seconds: 3_600,
   runtime_config_errors: []
 
 config :relay, RelayWeb.Endpoint,

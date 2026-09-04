@@ -14,6 +14,10 @@ O Relay ainda não possui versão estável e não deve ser utilizado em produç�
 - Respostas de erro não expõem stack traces nem respostas brutas de provedores.
 - A chave OpenRouter possui teto financeiro externo e pode ser desabilitada sem
   novo deploy.
+- O endpoint de oportunidades exige sessão assinada, consentimento, limites de
+  tamanho e rate limit. Sem Turnstile, permanece maior risco de spam e custo.
+- A URL de entrega é configuração do servidor e aceita somente formulários HTTPS
+  no domínio `formspree.io`; o visitante não controla o destino.
 
 Em suspeita de exposição, desabilite `CHAT_ENABLED`, revogue a chave no painel
 da OpenRouter e faça a rotação pelo procedimento em `docs/openrouter.md`. Não

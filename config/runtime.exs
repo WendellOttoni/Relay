@@ -71,10 +71,20 @@ if config_env() == :prod do
 
   openrouter_api_key = System.get_env("OPENROUTER_API_KEY")
   openrouter_model = System.get_env("OPENROUTER_MODEL")
-  system_prompt = System.get_env("SYSTEM_PROMPT")
+  configured_system_prompt = System.get_env("SYSTEM_PROMPT")
+  system_prompt = Relay.Chat.SystemPrompt.build(configured_system_prompt)
   turnstile_secret_key = System.get_env("TURNSTILE_SECRET_KEY")
   turnstile_expected_hostname = System.get_env("TURNSTILE_EXPECTED_HOSTNAME")
   turnstile_expected_action = System.get_env("TURNSTILE_EXPECTED_ACTION")
+
+  {lead_delivery_enabled, lead_enabled_errors} =
+    Relay.Config.parse_boolean(
+      System.get_env("LEAD_DELIVERY_ENABLED"),
+      "LEAD_DELIVERY_ENABLED",
+      false
+    )
+
+  formspree_form_endpoint = System.get_env("FORMSPREE_FORM_ENDPOINT")
 
   {allowed_origins, origin_errors} = Relay.Config.parse_origins(origins_value, :prod)
 
@@ -98,13 +108,29 @@ if config_env() == :prod do
     |> Kernel.++(max_messages_errors)
     |> Kernel.++(max_message_bytes_errors)
     |> Kernel.++(max_request_bytes_errors)
+    |> Kernel.++(lead_enabled_errors)
+
+  lead_delivery_errors =
+    cond do
+      not lead_delivery_enabled ->
+        []
+
+      formspree_form_endpoint in [nil, ""] ->
+        ["FORMSPREE_FORM_ENDPOINT is required"]
+
+      not Relay.Integrations.Formspree.valid_endpoint?(formspree_form_endpoint) ->
+        ["FORMSPREE_FORM_ENDPOINT must be an HTTPS formspree.io form URL"]
+
+      true ->
+        []
+    end
 
   openrouter_errors =
     if chat_enabled do
       []
       |> Relay.Config.require_secret("OPENROUTER_API_KEY", openrouter_api_key, 1)
       |> Relay.Config.require_value("OPENROUTER_MODEL", openrouter_model)
-      |> Relay.Config.require_value("SYSTEM_PROMPT", system_prompt)
+      |> Relay.Config.require_value("SYSTEM_PROMPT", configured_system_prompt)
     else
       []
     end
@@ -164,7 +190,12 @@ if config_env() == :prod do
     turnstile_secret_key: turnstile_secret_key,
     turnstile_expected_hostname: turnstile_expected_hostname,
     turnstile_expected_action: turnstile_expected_action,
-    runtime_config_errors: errors ++ openrouter_errors ++ turnstile_errors
+    lead_delivery:
+      if(lead_delivery_enabled and lead_delivery_errors == [],
+        do: {Relay.Integrations.Formspree, endpoint: formspree_form_endpoint},
+        else: Relay.Leads.DisabledDelivery
+      ),
+    runtime_config_errors: errors ++ openrouter_errors ++ turnstile_errors ++ lead_delivery_errors
 
   config :relay, RelayWeb.Endpoint,
     url: [host: host || "invalid.local", port: 443, scheme: "https"],

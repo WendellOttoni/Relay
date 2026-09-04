@@ -5,7 +5,7 @@ defmodule RelayWeb.Plugs.CORS do
   import Plug.Conn
 
   @allowed_methods "GET, POST, OPTIONS"
-  @allowed_headers ["content-type", "x-request-id"]
+  @allowed_headers ["authorization", "content-type", "x-request-id"]
   @max_age "600"
 
   @impl true

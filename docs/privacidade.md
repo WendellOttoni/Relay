@@ -15,6 +15,12 @@ revisadas antes da ativação.
 O navegador pode manter seu histórico localmente. Isso está fora do controle do
 Relay e deve ser explicado pela interface que o consome.
 
+Quando o visitante solicita contato, nome, e-mail, empresa opcional, resumo do
+projeto e proposta revisada são enviados ao Formspree somente após consentimento
+explícito. O Relay não persiste esses campos, mas o serviço de entrega e a caixa
+postal destinatária podem retê-los segundo suas próprias políticas. A finalidade
+é exclusivamente responder à oportunidade comercial enviada pelo visitante.
+
 ## Dados que o Relay não deve guardar
 
 No MVP, o Relay não possui banco nem histórico persistente. Não deve registrar:
@@ -23,6 +29,9 @@ No MVP, o Relay não possui banco nem histórico persistente. Não deve registra
 - chave OpenRouter, segredo Turnstile, `SECRET_KEY_BASE`, headers de
   autorização, token de socket ou cookies;
 - respostas brutas de erro do provedor.
+
+Os dados de uma oportunidade transitam em memória durante a entrega, sem serem
+incluídos nos logs do Relay.
 
 Logs e telemetria usam somente categorias de resultado, duração e contagens de
 uso quando disponibilizadas. Eles podem existir temporariamente no host de

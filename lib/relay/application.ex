@@ -12,6 +12,7 @@ defmodule Relay.Application do
       {Relay.Sessions.RateLimiter, []},
       {Relay.Sessions.Turnstile.TokenStore, []},
       {Relay.Chat.RateLimiter, []},
+      {Relay.Leads.RateLimiter, []},
       {Relay.Chat.GenerationLimiter, []},
       {Task.Supervisor, name: Relay.ChatTaskSupervisor},
       RelayWeb.Endpoint

@@ -16,7 +16,7 @@ somente valores locais seguros e exemplos sem credenciais.
 | `PUBLIC_SITE_URL` | sim | URL canônica do frontend |
 | `OPENROUTER_API_KEY` | Fase 3 | chave secreta da OpenRouter |
 | `OPENROUTER_MODEL` | Fase 3 | modelo permitido |
-| `SYSTEM_PROMPT` | Fase 3 | instrução controlada pelo servidor |
+| `SYSTEM_PROMPT` | Fase 3 | contexto factual adicional; a política comercial base é sempre aplicada pelo Relay |
 | `TURNSTILE_SECRET_KEY` | chat público | validação server-side |
 | `TURNSTILE_EXPECTED_HOSTNAME` | chat público | hostname autorizado |
 | `TURNSTILE_EXPECTED_ACTION` | chat público | action esperada |
@@ -29,6 +29,8 @@ somente valores locais seguros e exemplos sem credenciais.
 | `CHAT_MAX_OUTPUT_TOKENS` | não | limite enviado ao provedor |
 | `CHAT_TIMEOUT_MS` | não | duração máxima da geração |
 | `CHAT_MAX_CONCURRENT_GENERATIONS` | não | máximo de gerações simultâneas por instância |
+| `LEAD_DELIVERY_ENABLED` | não | habilita a entrega de oportunidades; padrão `false` |
+| `FORMSPREE_FORM_ENDPOINT` | se entrega ativa | endpoint HTTPS `https://formspree.io/f/<id>` configurado para o destinatário |
 | `LOG_LEVEL` | não | nível de log estruturado |
 
 ## Valores iniciais para o experimento
@@ -43,6 +45,7 @@ somente valores locais seguros e exemplos sem credenciais.
 | timeout total | 90 segundos |
 | tokens de saída | 1.000 |
 | gerações simultâneas por instância | 8 |
+| oportunidades por sessão | 2 por hora |
 
 São valores de partida, não garantias permanentes. Mudanças em produção devem ser
 feitas por configuração e acompanhadas por testes de fronteira.

@@ -16,6 +16,7 @@ defmodule RelayWeb.Router do
     pipe_through :api
 
     post "/sessions", SessionController, :create
+    post "/leads", LeadController, :create
   end
 
   scope "/", RelayWeb do
