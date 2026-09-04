@@ -19,8 +19,7 @@ defmodule Relay.Sessions do
   @spec create_session(map()) :: {:ok, session()} | {:error, atom()}
   def create_session(attrs) when is_map(attrs) do
     with :ok <- ensure_chat_enabled(),
-         :ok <- Relay.Sessions.RateLimiter.allow?(network_key(attrs), rate_limiter()),
-         :ok <- validate_challenge(attrs) do
+         :ok <- Relay.Sessions.RateLimiter.allow?(network_key(attrs), rate_limiter()) do
       issue_session()
     end
   end
@@ -50,37 +49,10 @@ defmodule Relay.Sessions do
     {:ok, %{session_id: session_id, socket_token: socket_token, expires_at: expires_at}}
   end
 
-  defp fetch_challenge_token(attrs) do
-    case Map.get(attrs, :turnstile_token) || Map.get(attrs, "turnstileToken") do
-      token when is_binary(token) and byte_size(token) > 0 -> {:ok, token}
-      _other -> {:error, :missing_challenge}
-    end
-  end
-
-  defp validate_challenge(attrs) do
-    if Application.get_env(:relay, :chat_allow_unprotected_demo, false) do
-      :ok
-    else
-      with {:ok, challenge_token} <- fetch_challenge_token(attrs),
-           :ok <- validator().verify(challenge_token, validation_context(attrs)),
-           :ok <- Relay.Sessions.Turnstile.TokenStore.consume(challenge_token, token_store()) do
-        :ok
-      end
-    end
-  end
-
   defp ensure_chat_enabled do
     if Application.get_env(:relay, :chat_enabled, false),
       do: :ok,
       else: {:error, :chat_disabled}
-  end
-
-  defp validation_context(attrs) do
-    %{
-      remote_ip: Map.get(attrs, :remote_ip),
-      expected_hostname: Application.get_env(:relay, :turnstile_expected_hostname),
-      expected_action: Application.get_env(:relay, :turnstile_expected_action)
-    }
   end
 
   defp network_key(attrs),
@@ -111,16 +83,8 @@ defmodule Relay.Sessions do
       else: {:error, :expired}
   end
 
-  defp validator do
-    Application.get_env(:relay, :turnstile_validator, Relay.Sessions.Turnstile.Disabled)
-  end
-
   defp rate_limiter do
     Application.get_env(:relay, :session_rate_limiter, Relay.Sessions.RateLimiter)
-  end
-
-  defp token_store do
-    Application.get_env(:relay, :turnstile_token_store, Relay.Sessions.Turnstile.TokenStore)
   end
 
   defp ttl_seconds do

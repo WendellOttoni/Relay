@@ -48,7 +48,7 @@ justifica a conexão persistente.
 
 Status: **Estratégia inicial aceita pela ADR 0008**
 
-CORS não resolve abuso direto. O experimento usará Turnstile, sessão anônima
+CORS não resolve abuso direto. O experimento usa sessão anônima
 curta, limites locais e teto financeiro. Antes de múltiplas instâncias, decidir
 onde manter contadores distribuídos.
 

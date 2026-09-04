@@ -45,7 +45,7 @@ permissões. A URL do Relay pode ser configuração pública de build.
 
 ### API HTTP
 
-Expõe health checks e cria sessões anônimas após validação Turnstile. Valida
+Expõe health checks e cria sessões anônimas. Valida
 corpo, origem e limites, atribui request ID e converte erros para um contrato
 estável. O conteúdo do chat não passa por um endpoint REST no MVP.
 
@@ -83,7 +83,7 @@ retenção, exclusão, privacidade e autenticação.
 ## 4. Fluxo do chat
 
 ```text
-1. Browser resolve Turnstile e cria uma sessão anônima por HTTP.
+1. Browser cria uma sessão anônima por HTTP.
 2. Browser conecta ao socket com token assinado e entra no próprio tópico.
 3. Channel valida `chat:generate`, limites e ausência de geração concorrente.
 4. Serviço de chat inicia uma Task monitorada usando a porta de provedor.

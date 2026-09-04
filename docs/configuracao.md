@@ -17,11 +17,7 @@ somente valores locais seguros e exemplos sem credenciais.
 | `OPENROUTER_API_KEY` | Fase 3 | chave secreta da OpenRouter |
 | `OPENROUTER_MODEL` | Fase 3 | modelo permitido |
 | `SYSTEM_PROMPT` | Fase 3 | contexto factual adicional; a política comercial base é sempre aplicada pelo Relay |
-| `TURNSTILE_SECRET_KEY` | chat público | validação server-side |
-| `TURNSTILE_EXPECTED_HOSTNAME` | chat público | hostname autorizado |
-| `TURNSTILE_EXPECTED_ACTION` | chat público | action esperada |
 | `CHAT_ENABLED` | não | chave de emergência; padrão `false` em produção nova |
-| `CHAT_ALLOW_UNPROTECTED_DEMO` | não | **somente demonstração privada**; desativa Turnstile temporariamente |
 | `CHAT_SESSION_TTL_SECONDS` | não | duração da sessão anônima |
 | `CHAT_MAX_MESSAGES` | não | quantidade máxima no histórico |
 | `CHAT_MAX_MESSAGE_BYTES` | não | tamanho máximo por mensagem |
@@ -56,12 +52,12 @@ feitas por configuração e acompanhadas por testes de fronteira.
   saudável;
 - `SECRET_KEY_BASE` e secrets nunca aparecem na mensagem de erro;
 - produção rejeita origem curinga, `localhost` e esquemas diferentes de HTTPS;
-- `CHAT_ENABLED=true` exige OpenRouter e, exceto se `CHAT_ALLOW_UNPROTECTED_DEMO=true`, todas as configurações do Turnstile;
+- `CHAT_ENABLED=true` exige a configuração válida da OpenRouter;
 - a aplicação inicia com chat desabilitado para permitir diagnóstico seguro,
   podendo responder saudável em `/health/ready`, mas não atende sessão nem
   geração enquanto o chat estiver desabilitado;
-- `CHAT_ENABLED=true` só se torna efetivo se a configuração base, os limites,
-  Turnstile e OpenRouter forem válidos. Em caso de erro, o processo conserva o
+- `CHAT_ENABLED=true` só se torna efetivo se a configuração base, os limites e
+  a OpenRouter forem válidos. Em caso de erro, o processo conserva o
   modo seguro com chat indisponível; não há fallback para o provedor real.
 
 ## Estados operacionais
@@ -69,7 +65,7 @@ feitas por configuração e acompanhadas por testes de fronteira.
 | Estado | Configuração | Efeito para o consumidor |
 | --- | --- | --- |
 | Serviço disponível, chat desligado | `CHAT_ENABLED=false` | health pode estar pronto; sessão responde `503 sessions_unavailable` |
-| Serviço pronto para chat | `CHAT_ENABLED=true` e todos os valores exigidos válidos | sessão Turnstile e geração podem ser atendidas |
+| Serviço pronto para chat | `CHAT_ENABLED=true` e todos os valores exigidos válidos | sessão e geração podem ser atendidas |
 | Configuração inválida | erro de validação em runtime | `/health/ready` responde `503`; o chat não é habilitado |
 
 Mudar `CHAT_ENABLED` ou qualquer segredo requer aplicar a alteração pela
@@ -80,5 +76,5 @@ transmita um segredo ao frontend para tentar ativar o serviço.
 
 - **local:** frontend local explícito, chave OpenRouter opcional e adaptador falso
   por padrão;
-- **preview:** origem própria, Turnstile de teste e sem chave de produção;
+- **preview:** origem própria, limites reduzidos e sem chave de produção;
 - **produção experimental:** URL do Pages, secrets do Render e limites baixos.

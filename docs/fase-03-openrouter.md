@@ -3,7 +3,7 @@
 Status: **Parcialmente implementada.** F3.2 (cliente Req/SSE), F3.3
 (cancelamento e falhas), F3.5 (observabilidade sem conteúdo, contadores locais
 e alerta por falhas repetidas) e a parte técnica
-de F3.4 (Turnstile server-side, sessão de uso único e chave de emergência)
+de F3.4 (sessão curta, limites e chave de emergência)
 estão implementadas. O modelo inicial foi escolhido, mas a sua avaliação
 operacional, o teto financeiro, a rotação da chave e o smoke test com orçamento
 real continuam pendentes. A fase não pode ser encerrada enquanto essas decisões
@@ -53,7 +53,7 @@ lentos sem acessar a internet.
 
 ### F3.4 — Ativar proteção real
 
-- validar Turnstile pelo endpoint Siteverify;
+- validar origem, limites e configuração de runtime;
 - conferir hostname e action;
 - configurar limites por sessão e sinal de rede;
 - ativar teto financeiro da chave;

@@ -12,7 +12,6 @@ reescrito para mudar a decisão; uma nova ADR o substitui e preserva o históric
 | [0005](0005-hospedar-no-render.md) | Hospedar o experimento no Render | Aceita para experimento |
 | [0006](0006-integrar-openrouter-no-backend.md) | Integrar OpenRouter pelo backend | Aceita |
 | [0007](0007-adiar-postgresql-e-ecto.md) | Adiar PostgreSQL e Ecto | Aceita |
-| [0008](0008-proteger-sessoes-anonimas.md) | Proteger sessões anônimas | Aceita |
 
 ## Próximas ADRs necessárias
 

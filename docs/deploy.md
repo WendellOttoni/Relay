@@ -63,7 +63,6 @@ O frontend pode conter:
 ```text
 RELAY_API_URL=https://api.exemplo.com
 RELAY_SOCKET_URL=wss://api.exemplo.com/socket
-TURNSTILE_SITE_KEY=<identificador público>
 ```
 
 Essa URL não é segredo. Chaves de IA, client secrets, tokens do GitHub e strings
@@ -78,7 +77,6 @@ Exemplos conceituais:
 OPENROUTER_API_KEY=<segredo>
 OPENROUTER_MODEL=<modelo permitido>
 SECRET_KEY_BASE=<segredo Phoenix>
-TURNSTILE_SECRET_KEY=<segredo>
 ALLOWED_ORIGINS=https://usuario.github.io
 GITHUB_CLIENT_ID=<quando necessário>
 GITHUB_CLIENT_SECRET=<quando necessário>

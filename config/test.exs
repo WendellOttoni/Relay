@@ -9,6 +9,5 @@ config :logger, level: :info
 config :phoenix, :plug_init_mode, :runtime
 
 config :relay,
-  turnstile_validator: Relay.Sessions.Turnstile.Fake,
   chat_enabled: true,
   chat_provider: Relay.Chat.FakeProvider

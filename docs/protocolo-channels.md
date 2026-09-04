@@ -12,13 +12,7 @@ da OpenRouter não fazem parte deste protocolo.
 
 Cria uma sessão anônima curta antes da conexão WebSocket.
 
-Requisição:
-
-```json
-{
-  "turnstileToken": "token gerado no navegador"
-}
-```
+Requisição: corpo JSON vazio.
 
 Resposta `201 Created`:
 
@@ -32,11 +26,9 @@ Resposta `201 Created`:
 
 Regras:
 
-- o token Turnstile é validado no servidor, inclusive `hostname` e `action`;
-- cada token Turnstile só pode criar uma sessão;
 - o token do socket contém somente identificadores não sensíveis;
 - a expiração inicial recomendada é 30 minutos;
-- renovar uma sessão exige um novo desafio Turnstile;
+- renovar uma sessão emite um novo token curto;
 - falhas usam o formato comum de erro HTTP.
 
 ## 2. Conexão

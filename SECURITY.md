@@ -8,14 +8,13 @@ O Relay ainda não possui versão estável e não deve ser utilizado em produç�
 - Segredos são fornecidos pelo ambiente da hospedagem, nunca pelo repositório.
 - CORS restringe navegadores, mas não substitui autenticação ou controle de abuso.
 - O socket valida origem e token curto antes de permitir entrada em um Channel.
-- Turnstile é proteção anti-bot, não identidade nem autorização.
 - Prompts, respostas, tokens e credenciais não são registrados por padrão.
 - Entrada, saída, duração, concorrência e consumo possuem limites configuráveis.
 - Respostas de erro não expõem stack traces nem respostas brutas de provedores.
 - A chave OpenRouter possui teto financeiro externo e pode ser desabilitada sem
   novo deploy.
 - O endpoint de oportunidades exige sessão assinada, consentimento, limites de
-  tamanho e rate limit. Sem Turnstile, permanece maior risco de spam e custo.
+  tamanho e rate limit. Monitore spam e custo no provedor.
 - A URL de entrega é configuração do servidor e aceita somente formulários HTTPS
   no domínio `formspree.io`; o visitante não controla o destino.
 

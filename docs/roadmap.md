@@ -19,7 +19,7 @@ comportamento pode ser demonstrado e seus critérios estão automatizados.
 - provedor falso determinístico;
 - eventos por Phoenix Channels e cancelamento da Task;
 - estados de loading, sucesso e erro no frontend de teste;
-- Turnstile simulado, limites locais e testes de desconexão.
+- limites locais e testes de desconexão.
 
 **Saída:** o Pages conversa por WebSocket com o Relay sem chave ou custo externo.
 
@@ -29,12 +29,13 @@ comportamento pode ser demonstrado e seus critérios estão automatizados.
 - segredo apenas no backend;
 - timeout, limites de contexto e saída;
 - erros normalizados;
-- Turnstile real, teto financeiro e chave de emergência;
+- teto financeiro e chave de emergência;
 - métricas agregadas de duração e consumo, sem conteúdo.
 
-**Estado atual:** implementação de backend concluída, mas operação ainda
-desligada por padrão. Faltam aprovar orçamento, avaliar o modelo configurado,
-configurar segredos no host e executar o smoke manual autorizado.
+**Estado atual:** backend e operação pública concluídos. O chat responde pelo
+GitHub Pages e o fluxo de oportunidade foi validado com entrega real ao
+Formspree. Falta apenas registrar formalmente o teto financeiro e executar o
+smoke manual isolado, se for necessário para auditoria operacional.
 
 **Saída:** chat real funciona dentro de um orçamento baixo sem expor credenciais
 nem conteúdo em logs.
@@ -49,9 +50,8 @@ nem conteúdo em logs.
 
 **Saída:** usuário acessa o Pages e conversa pelo Relay em produção.
 
-O Relay não receberá UI própria nesta fase; o Pages continua sendo o único
-consumidor de interface previsto. O serviço pode continuar desligado entre
-testes ou até existir demanda do frontend.
+**Estado atual:** concluída. O Pages possui widget flutuante, conexão sob demanda,
+ações para copiar/baixar a proposta inicial e formulário de interesse revisável.
 
 ## v0.5 — Proteção pública
 

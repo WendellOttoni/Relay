@@ -2,82 +2,36 @@ defmodule RelayWeb.SessionControllerTest do
   use RelayWeb.ConnCase, async: false
 
   setup do
-    previous_validator = Application.get_env(:relay, :turnstile_validator)
-    previous_tokens = Application.get_env(:relay, :turnstile_fake_tokens)
     previous_limiter = Application.get_env(:relay, :session_rate_limiter)
-    previous_token_store = Application.get_env(:relay, :turnstile_token_store)
     previous_chat_enabled = Application.get_env(:relay, :chat_enabled)
 
     start_supervised!(
       {Relay.Sessions.RateLimiter, name: Relay.SessionControllerTestLimiter, limit: 100}
     )
 
-    start_supervised!(
-      {Relay.Sessions.Turnstile.TokenStore, name: Relay.SessionControllerTestTokenStore}
-    )
-
     Application.put_env(:relay, :session_rate_limiter, Relay.SessionControllerTestLimiter)
-    Application.put_env(:relay, :turnstile_token_store, Relay.SessionControllerTestTokenStore)
     Application.put_env(:relay, :chat_enabled, true)
 
     on_exit(fn ->
-      restore_env(:turnstile_validator, previous_validator)
-      restore_env(:turnstile_fake_tokens, previous_tokens)
       restore_env(:session_rate_limiter, previous_limiter)
-      restore_env(:turnstile_token_store, previous_token_store)
       restore_env(:chat_enabled, previous_chat_enabled)
     end)
-
-    :ok
   end
 
   test "creates a session with the documented JSON shape", %{conn: conn} do
-    Application.put_env(:relay, :turnstile_validator, Relay.Sessions.Turnstile.Fake)
-    Application.put_env(:relay, :turnstile_fake_tokens, ["accepted-token"])
+    conn = RelayWeb.SessionController.create(conn, %{})
 
-    conn = RelayWeb.SessionController.create(conn, %{"turnstileToken" => "accepted-token"})
-
-    assert %{
-             "sessionId" => session_id,
-             "socketToken" => socket_token,
-             "expiresAt" => expires_at
-           } = json_response(conn, 201)
+    assert %{"sessionId" => session_id, "socketToken" => socket_token, "expiresAt" => expires_at} =
+             json_response(conn, 201)
 
     assert {:ok, %{session_id: ^session_id}} = Relay.Sessions.verify_socket_token(socket_token)
     assert {:ok, _date_time, 0} = DateTime.from_iso8601(expires_at)
   end
 
-  test "returns a safe bad-request response when the challenge is absent", %{conn: conn} do
-    conn = RelayWeb.SessionController.create(conn, %{})
-
-    assert %{"error" => %{"code" => "invalid_request"}} = json_response(conn, 400)
-  end
-
-  test "returns service unavailable when the fail-closed validator is active", %{conn: conn} do
-    Application.delete_env(:relay, :turnstile_validator)
-
-    conn = RelayWeb.SessionController.create(conn, %{"turnstileToken" => "token"})
-
-    assert %{"error" => %{"code" => "sessions_unavailable"}} = json_response(conn, 503)
-  end
-
   test "does not issue sessions while the emergency chat switch is off", %{conn: conn} do
     Application.put_env(:relay, :chat_enabled, false)
-    Application.put_env(:relay, :turnstile_validator, Relay.Sessions.Turnstile.Fake)
-    Application.put_env(:relay, :turnstile_fake_tokens, ["accepted-token"])
-
-    conn = RelayWeb.SessionController.create(conn, %{"turnstileToken" => "accepted-token"})
-
+    conn = RelayWeb.SessionController.create(conn, %{})
     assert %{"error" => %{"code" => "chat_unavailable"}} = json_response(conn, 503)
-  end
-
-  test "does not expose why a configured validator refused a challenge", %{conn: conn} do
-    Application.put_env(:relay, :turnstile_validator, Relay.Sessions.Turnstile.Fake)
-    Application.put_env(:relay, :turnstile_fake_tokens, [])
-
-    conn = RelayWeb.SessionController.create(conn, %{"turnstileToken" => "refused"})
-
-    assert %{"error" => %{"code" => "challenge_rejected"}} = json_response(conn, 403)
   end
 
   test "returns too many requests after the per-network limit", %{conn: conn} do
@@ -89,13 +43,9 @@ defmodule RelayWeb.SessionControllerTest do
     })
 
     Application.put_env(:relay, :session_rate_limiter, limiter_name)
-    Application.put_env(:relay, :turnstile_validator, Relay.Sessions.Turnstile.Fake)
-    Application.put_env(:relay, :turnstile_fake_tokens, ["accepted-token"])
-
-    first = RelayWeb.SessionController.create(conn, %{"turnstileToken" => "accepted-token"})
+    first = RelayWeb.SessionController.create(conn, %{})
     assert json_response(first, 201)
-
-    second = RelayWeb.SessionController.create(conn, %{"turnstileToken" => "accepted-token"})
+    second = RelayWeb.SessionController.create(conn, %{})
     assert %{"error" => %{"code" => "rate_limit_exceeded"}} = json_response(second, 429)
   end
 

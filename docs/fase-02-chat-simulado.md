@@ -10,7 +10,7 @@ cancelamento sem acessar a OpenRouter ou qualquer serviço pago.
 
 ## 2. Dentro do escopo
 
-- endpoint de criação de sessão com validador Turnstile substituível;
+- endpoint de criação de sessão com limites por origem de rede;
 - token Phoenix curto e conexão autenticada;
 - `UserSocket` e `ChatChannel`;
 - porta interna de provedor e implementação falsa;
@@ -26,7 +26,7 @@ Ficam fora: chave OpenRouter, banco, login, ferramentas e persistência.
 
 ### F2.1 — Criar sessões anônimas
 
-- definir behaviour para validação Turnstile;
+- definir behaviour para emissão de sessão curta;
 - usar implementação sempre controlável nos testes;
 - emitir `sessionId`, token assinado e expiração;
 - rejeitar payload, origem, hostname, action e token inválidos;

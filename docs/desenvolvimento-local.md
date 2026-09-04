@@ -1,7 +1,7 @@
 # Desenvolvimento local
 
 Este repositório contém somente o backend Phoenix. O frontend e o widget
-Turnstile pertencem ao repositório do GitHub Pages e não recebem segredos do
+proteções de interface pertencem ao repositório do GitHub Pages e não recebem segredos do
 Relay.
 
 ## Pré-requisitos
@@ -22,7 +22,7 @@ mix check
 ```
 
 `mix check` executa formatação, compilação sem warnings e testes. A suíte
-normal é offline e usa o provedor e o Turnstile falsos; ela não deve receber uma
+normal é offline e usa o provedor falso; ela não deve receber uma
 chave OpenRouter.
 
 ## Configuração local segura
@@ -30,7 +30,7 @@ chave OpenRouter.
 Os valores padrão de desenvolvimento permitem apenas
 `http://localhost:5173`. Para apontar outro frontend local, defina
 `ALLOWED_ORIGINS` e `PUBLIC_SITE_URL` com a URL exata desse frontend antes de
-iniciar o Relay. Nunca inclua `OPENROUTER_API_KEY`, `TURNSTILE_SECRET_KEY` ou
+iniciar o Relay. Nunca inclua `OPENROUTER_API_KEY` ou
 segredos do GitHub em arquivos versionados, no bundle do frontend ou em testes.
 
 Em produção, o chat permanece desabilitado até que `CHAT_ENABLED=true` e todas

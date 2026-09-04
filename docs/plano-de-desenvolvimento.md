@@ -54,7 +54,7 @@ O código será uma aplicação OTP única, organizada por responsabilidade:
 
 - **Relay.Chat:** tipos, caso de uso, limites e behaviour do provedor;
 - **Relay.Integrations.OpenRouter:** Req, parsing SSE e tradução externa;
-- **Relay.Sessions:** Turnstile e tokens anônimos;
+- **Relay.Sessions:** tokens anônimos curtos e rate limiting;
 - **Relay.RateLimit:** limites locais do experimento;
 - **RelayWeb:** HTTP, socket, Channels, plugs e representação de erros;
 - **supervision tree:** Task Supervisor e processos de infraestrutura.
@@ -64,7 +64,7 @@ Não criar umbrella, microsserviços, Repo ou abstrações genéricas sem necess
 ## 5. Regras de dependência
 
 ```text
-HTTP sessão ------> sessões / Turnstile
+HTTP sessão ------> sessões curtas / rate limiting
 
 Channel ----------> caso de uso ------> tipos internos
    |                    |
@@ -156,7 +156,7 @@ Não registrar:
 As Fases 1 a 3 estão implementadas no backend (código e testes). A Fase 1
 (fundação) só falta a publicação real no Render (F1.9); a Fase 2 (sessão,
 socket e Channel com adaptador falso) está completa; a Fase 3 (OpenRouter) tem
-adaptador Req/SSE, cancelamento, observabilidade, Turnstile server-side e
+adaptador Req/SSE, cancelamento, observabilidade, limites e
 desligamento de emergência prontos. A chave real segue bloqueada até a avaliação
 do modelo escolhido e a definição de orçamento (ver
 [decisões pendentes](decisoes-pendentes.md), seções 5 e 9).

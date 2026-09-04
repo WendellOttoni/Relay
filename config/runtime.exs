@@ -11,15 +11,6 @@ if config_env() == :prod do
   {chat_enabled, chat_enabled_errors} =
     Relay.Config.parse_boolean(System.get_env("CHAT_ENABLED"), "CHAT_ENABLED", false)
 
-  # This is deliberately opt-in and intended only for a short private demo.
-  # A public deployment must keep this false and require Turnstile.
-  {chat_allow_unprotected_demo, demo_mode_errors} =
-    Relay.Config.parse_boolean(
-      System.get_env("CHAT_ALLOW_UNPROTECTED_DEMO"),
-      "CHAT_ALLOW_UNPROTECTED_DEMO",
-      false
-    )
-
   {chat_max_output_tokens, output_token_errors} =
     Relay.Config.parse_positive_integer(
       System.get_env("CHAT_MAX_OUTPUT_TOKENS"),
@@ -73,9 +64,6 @@ if config_env() == :prod do
   openrouter_model = System.get_env("OPENROUTER_MODEL")
   configured_system_prompt = System.get_env("SYSTEM_PROMPT")
   system_prompt = Relay.Chat.SystemPrompt.build(configured_system_prompt)
-  turnstile_secret_key = System.get_env("TURNSTILE_SECRET_KEY")
-  turnstile_expected_hostname = System.get_env("TURNSTILE_EXPECTED_HOSTNAME")
-  turnstile_expected_action = System.get_env("TURNSTILE_EXPECTED_ACTION")
 
   {lead_delivery_enabled, lead_enabled_errors} =
     Relay.Config.parse_boolean(
@@ -98,7 +86,6 @@ if config_env() == :prod do
     |> Relay.Config.require_value("PUBLIC_SITE_URL", public_site_url)
     |> Kernel.++(origin_errors)
     |> Kernel.++(chat_enabled_errors)
-    |> Kernel.++(demo_mode_errors)
     |> Kernel.++(port_errors)
     |> Kernel.++(log_level_errors)
     |> Kernel.++(output_token_errors)
@@ -135,20 +122,10 @@ if config_env() == :prod do
       []
     end
 
-  turnstile_errors =
-    if chat_enabled and not chat_allow_unprotected_demo do
-      []
-      |> Relay.Config.require_secret("TURNSTILE_SECRET_KEY", turnstile_secret_key, 1)
-      |> Relay.Config.require_value("TURNSTILE_EXPECTED_HOSTNAME", turnstile_expected_hostname)
-      |> Relay.Config.require_value("TURNSTILE_EXPECTED_ACTION", turnstile_expected_action)
-    else
-      []
-    end
-
   # Any invalid runtime setting disables the public chat. This ensures a typo in
   # a limit or deployment value cannot accidentally expose the provider.
   provider_configured? =
-    chat_enabled and errors == [] and openrouter_errors == [] and turnstile_errors == []
+    chat_enabled and errors == [] and openrouter_errors == []
 
   chat_provider =
     if provider_configured? do
@@ -170,7 +147,6 @@ if config_env() == :prod do
     allowed_origins: allowed_origins,
     public_site_url: public_site_url,
     chat_enabled: provider_configured?,
-    chat_allow_unprotected_demo: provider_configured? and chat_allow_unprotected_demo,
     chat_provider: chat_provider,
     chat_max_output_tokens: chat_max_output_tokens,
     chat_timeout_ms: chat_timeout_ms,
@@ -182,20 +158,12 @@ if config_env() == :prod do
       max_message_bytes: chat_max_message_bytes,
       max_request_bytes: chat_max_request_bytes
     },
-    turnstile_validator:
-      if(provider_configured? and not chat_allow_unprotected_demo,
-        do: Relay.Sessions.Turnstile.Cloudflare,
-        else: Relay.Sessions.Turnstile.Disabled
-      ),
-    turnstile_secret_key: turnstile_secret_key,
-    turnstile_expected_hostname: turnstile_expected_hostname,
-    turnstile_expected_action: turnstile_expected_action,
     lead_delivery:
       if(lead_delivery_enabled and lead_delivery_errors == [],
         do: {Relay.Integrations.Formspree, endpoint: formspree_form_endpoint},
         else: Relay.Leads.DisabledDelivery
       ),
-    runtime_config_errors: errors ++ openrouter_errors ++ turnstile_errors ++ lead_delivery_errors
+    runtime_config_errors: errors ++ openrouter_errors ++ lead_delivery_errors
 
   config :relay, RelayWeb.Endpoint,
     url: [host: host || "invalid.local", port: 443, scheme: "https"],

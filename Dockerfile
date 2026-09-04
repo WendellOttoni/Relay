@@ -31,7 +31,7 @@ RUN mix compile \
 FROM elixir:${ELIXIR_VERSION}-otp-${OTP_VERSION}-slim AS runtime
 
 # The release must trust public certificate authorities for outbound HTTPS
-# requests to Turnstile and OpenRouter.
+# requests to OpenRouter and Formspree.
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*

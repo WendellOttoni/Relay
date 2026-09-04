@@ -32,15 +32,7 @@ indisponíveis por desenho.
 
 ### `POST /api/v1/sessions`
 
-Valida um desafio Turnstile e emite credenciais curtas para o socket.
-
-Requisição:
-
-```json
-{
-  "turnstileToken": "token gerado no navegador"
-}
-```
+Emite credenciais curtas para o socket. O corpo pode ser vazio.
 
 Resposta `201 Created`:
 
@@ -52,16 +44,15 @@ Resposta `201 Created`:
 }
 ```
 
-O endpoint valida token, hostname e action do Turnstile. Tokens ausentes,
-expirados, reutilizados ou inválidos recebem `403`. Limites de criação de sessão
-podem produzir `429`.
+O endpoint não identifica o visitante. Limites de criação de sessão por origem
+de rede podem produzir `429`.
 
 O token de socket não contém credenciais externas, mensagem ou informação
 pessoal. A expiração inicial é definida em [configuração](configuracao.md).
 
 Quando o serviço estiver em modo desabilitado, a criação de sessão responde
-`503 sessions_unavailable`. Um cliente consumidor deve tratar isso como estado
-temporário, não tentar contornar a proteção antiabuso e não abrir o socket.
+`503 chat_unavailable`. Um cliente consumidor deve tratar isso como estado
+temporário e não abrir o socket.
 
 ## Oportunidades comerciais
 
@@ -112,7 +103,6 @@ Códigos HTTP iniciais:
 | --- | --- |
 | `400` | JSON ou campos inválidos |
 | `401` | sessão ausente, inválida ou expirada |
-| `403` | origem ou desafio Turnstile recusado |
 | `404` | rota inexistente |
 | `413` | corpo acima do limite |
 | `429` | limite temporário atingido |
@@ -125,8 +115,8 @@ Produção aceita somente as origens configuradas para o site. Métodos, headers
 tempo de preflight são mínimos. Origem nula e curingas são recusados. A política
 HTTP e o `check_origin` do socket derivam da mesma configuração validada.
 
-CORS não impede chamadas feitas fora de um navegador. O endpoint público ainda
-precisa de rate limiting, orçamento e um mecanismo antiabuso.
+CORS não impede chamadas feitas fora de um navegador. O endpoint público usa
+rate limiting, sessões curtas e orçamento controlado no provedor.
 
 ## Versionamento
 

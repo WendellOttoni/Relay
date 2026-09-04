@@ -12,7 +12,7 @@ defmodule RelayWeb.LeadControllerTest do
   end
 
   setup do
-    keys = [:chat_allow_unprotected_demo, :lead_delivery, :lead_rate_limiter]
+    keys = [:lead_delivery, :lead_rate_limiter]
     previous = Map.new(keys, &{&1, Application.get_env(:relay, &1)})
 
     limiter =
@@ -23,7 +23,6 @@ defmodule RelayWeb.LeadControllerTest do
       start: {Relay.Leads.RateLimiter, :start_link, [[name: limiter, limit: 10]]}
     })
 
-    Application.put_env(:relay, :chat_allow_unprotected_demo, true)
     Application.put_env(:relay, :lead_delivery, {FakeDelivery, test_pid: self()})
     Application.put_env(:relay, :lead_rate_limiter, limiter)
 

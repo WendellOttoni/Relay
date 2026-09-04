@@ -12,8 +12,9 @@ separadamente.
 > O Relay não oferece interface de usuário. Ele é um serviço de backend que
 > permanece inativo por padrão (`CHAT_ENABLED=false`) e só atende gerações
 > quando um consumidor autorizado — inicialmente o GitHub Pages — o utiliza.
-> A fundação, o protocolo e o adaptador OpenRouter existem no código; não há
-> deploy público validado nem consumidor frontend integrado.
+> O Relay está publicado e integrado ao GitHub Pages. O widget flutuante usa
+> sessões curtas, Phoenix Channels e OpenRouter; oportunidades consentidas são
+> entregues ao Formspree.
 
 ## Por que existe um backend?
 
@@ -54,7 +55,7 @@ serviço de IA, o backend ou o banco podem possuir limites ou custos próprios.
 | Cliente HTTP | Req |
 | IA | OpenRouter, com chave e modelo controlados pelo Relay |
 | Deploy experimental | Web Service gratuito do Render |
-| Proteção | Turnstile, sessão anônima curta, limites e teto financeiro |
+| Proteção | sessão anônima curta, origens restritas, limites e teto financeiro |
 | Persistência | nenhuma no MVP; PostgreSQL/Ecto ficam adiados |
 
 As versões patch serão fixadas ao inicializar o projeto. Somente versões estáveis
@@ -64,13 +65,13 @@ serão usadas.
 
 O fluxo inicial planejado é:
 
-1. o frontend obtém um desafio Cloudflare Turnstile;
-2. `POST /api/v1/sessions` valida o desafio e cria uma sessão anônima curta;
-3. o cliente conecta ao socket Phoenix e entra em `chat:<sessionId>`;
-4. `chat:generate` envia um histórico validado e limitado;
-5. o Relay adiciona o prompt de sistema e chama a OpenRouter com streaming;
-6. cada delta é convertido para um evento do Channel;
-7. cancelamento ou desconexão encerram a tarefa e a chamada externa;
+1. `POST /api/v1/sessions` cria uma sessão anônima curta;
+2. o cliente conecta ao socket Phoenix e entra em `chat:<sessionId>`;
+3. `chat:generate` envia um histórico validado e limitado;
+4. o Relay adiciona o prompt comercial e chama a OpenRouter com streaming;
+5. cada delta é convertido para um evento do Channel;
+6. cancelamento ou desconexão encerram a tarefa e a chamada externa;
+7. o visitante pode revisar e enviar uma oportunidade ao Formspree;
 8. nenhum conteúdo da conversa é persistido ou registrado pelo Relay.
 
 ```text
@@ -145,9 +146,10 @@ Antes de iniciar o código:
 - [x] Sessão anônima, socket, Channel e provedor falso implementados.
 - [x] Adaptador Req/SSE da OpenRouter implementado.
 - [x] Serviço seguro por padrão: chat desabilitado até configuração e decisão operacional explícitas.
-- [ ] Deploy público no Render validado.
-- [ ] Integração com o frontend do GitHub Pages.
-- [ ] Aprovar orçamento/teto financeiro e executar o smoke manual da OpenRouter.
+- [x] Deploy público no Render validado.
+- [x] Integração com o frontend do GitHub Pages, com widget flutuante e WebSocket.
+- [x] Prompt comercial, proposta inicial e entrega consentida de oportunidades via Formspree.
+- [ ] Registrar formalmente o teto financeiro e executar o smoke manual isolado da OpenRouter.
 
 Consulte o [runbook operacional](docs/operacao.md) antes de habilitar o chat e
 a [nota mínima de privacidade](docs/privacidade.md) antes de publicar um

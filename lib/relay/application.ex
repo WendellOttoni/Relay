@@ -10,7 +10,6 @@ defmodule Relay.Application do
       Relay.Chat.GenerationMetrics,
       {Phoenix.PubSub, name: Relay.PubSub},
       {Relay.Sessions.RateLimiter, []},
-      {Relay.Sessions.Turnstile.TokenStore, []},
       {Relay.Chat.RateLimiter, []},
       {Relay.Leads.RateLimiter, []},
       {Relay.Chat.GenerationLimiter, []},

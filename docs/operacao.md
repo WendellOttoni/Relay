@@ -21,10 +21,10 @@ registro não inclui mensagens, tokens de socket nem valores de segredos.
 ## Checklist de ativação
 
 1. Confirme que o consumidor é a origem exata em `ALLOWED_ORIGINS` e que
-   `PUBLIC_SITE_URL`, `PHX_HOST` e `TURNSTILE_EXPECTED_HOSTNAME` correspondem
+   `PUBLIC_SITE_URL` e `PHX_HOST` correspondem
    ao ambiente publicado.
 2. Cadastre no cofre do host `SECRET_KEY_BASE`, `OPENROUTER_API_KEY`,
-   `TURNSTILE_SECRET_KEY`, modelo e prompt. Nunca os coloque no repositório,
+   modelo e prompt. Nunca os coloque no repositório,
    build do Pages, console do navegador ou ticket.
 3. Defina limites locais e um teto financeiro/alertas no painel da OpenRouter.
    O teto externo é obrigatório porque métricas locais reiniciam com a instância
@@ -36,12 +36,12 @@ registro não inclui mensagens, tokens de socket nem valores de segredos.
    `/health/live` e `/health/ready`, CORS e origem do WebSocket.
 6. Após aprovar o orçamento, habilite `CHAT_ENABLED=true`, reimplante e execute
    um smoke manual explicitamente autorizado. Ele não faz parte da CI.
-7. Valide pelo navegador integrado: Turnstile, criação de sessão, conexão,
+7. Valide pelo navegador integrado: criação de sessão, conexão,
    delta, cancelamento, expiração e comportamento após cold start. Não copie
    conteúdo de conversa em evidências públicas.
 
 Se qualquer etapa falhar, volte `CHAT_ENABLED` para `false` e não tente
-contornar validações de origem ou Turnstile.
+contornar validações de origem ou limites.
 
 ## Monitoramento e alertas
 
@@ -89,7 +89,7 @@ locais são efêmeros.
 1. Desabilite o chat; não espere a conclusão da investigação.
 2. Confirme o teto e consumo no provedor, e mantenha a chave revogada se houver
    dúvida de comprometimento.
-3. Revise Turnstile, origem, limites e padrões agregados. Não atribua identidade
+3. Revise origem, limites e padrões agregados. Não atribua identidade
    a usuários anônimos além do que os dados disponíveis permitem.
 4. Antes de reativar, ajuste controles e defina claramente o orçamento restante.
 
@@ -121,7 +121,7 @@ recupera sessões, conexões ou gerações interrompidas. No host:
 
 Use o procedimento detalhado em [OpenRouter](openrouter.md). A rotação inclui
 criar chave substituta, atualizar somente o cofre de deploy, validar de modo
-controlado e revogar a anterior. Também rotacione `TURNSTILE_SECRET_KEY` e
+controlado e revogar a anterior.
 `SECRET_KEY_BASE` segundo as capacidades e impacto de cada provedor; mudar
 `SECRET_KEY_BASE` invalida tokens/sessões assinados existentes.
 

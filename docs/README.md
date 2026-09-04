@@ -20,6 +20,7 @@ para o Relay.
 13. [Privacidade](privacidade.md) — tratamento mínimo de dados no MVP.
 14. [Decisões pendentes](decisoes-pendentes.md) — escolhas que dependem do produto.
 15. [Roadmap](roadmap.md) — evolução do MVP até uma versão estável.
+16. [Estado atual](estado-atual.md) — funcionalidades implementadas e validadas.
 16. [ADRs](adr/README.md) — decisões aceitas e suas justificativas.
 
 ## Responsabilidade dos documentos

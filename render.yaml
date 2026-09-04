@@ -11,7 +11,7 @@ services:
       - key: PHX_SERVER
         value: "true"
       - key: CHAT_ENABLED
-        value: "false"
+        sync: false
       - key: PHX_HOST
         sync: false
       - key: PUBLIC_SITE_URL
@@ -25,12 +25,6 @@ services:
       - key: OPENROUTER_MODEL
         sync: false
       - key: SYSTEM_PROMPT
-        sync: false
-      - key: TURNSTILE_SECRET_KEY
-        sync: false
-      - key: TURNSTILE_EXPECTED_HOSTNAME
-        sync: false
-      - key: TURNSTILE_EXPECTED_ACTION
         sync: false
       - key: LEAD_DELIVERY_ENABLED
         sync: false
